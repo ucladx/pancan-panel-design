@@ -64,6 +64,15 @@ awk -F"\t" '{sum+=$3-$2} END {print sum}' data/exon_targets_grch38.bed
 * SNPs per gene for gene-level AI/CNA, evenly distributed across genome for arm-level CNA, at telomeres to detect telomeric AI
 * Usable for QCs steps like fingerprinting, detecting tumor-normal swaps, cross contamination, and identifying contaminant samples
 
+gnomAD v3 lists GRCh38 variants from 71702 genomes (and no exomes). For each variant, they list AC, AN, and nhomalt per subpopulation. Frequency of heterozygosity per subpopulation can be calculated as: `(AC - 2*nhomalt) / (AN/2)`
+
+Wrote a script and used it to shortlist 50k SNPs with a frequency of heterozygotes >10% in all 9 gnomAD v3 subpopulations:
+```bash
+python3 bin/select_gnomad_snps.py --gnomad-vcf /mdl/gnomad/gnomad.genomes.r3.0.sites.vcf.bgz --max-snps 50000 --output-bed data/snp_targets_grch38.bed
+```
+
+**Source:** https://storage.googleapis.com/gnomad-public/release/3.0/vcf/genomes/gnomad.genomes.r3.0.sites.vcf.bgz
+
 ### Microsatellites
 
 * GOAL consortium targets ACTC, BAT-25, BAT-26, BAT-34C4, BAT-40, D10S197, D11S925, D13S175, D17S250, D18S35, D18S474, D18S55, D18S58, D18S64, D18S69, D2S123, D3S1478, D3S1766, D5S107, D5S346, D6S260, HSPH1_T17, MONO-27, NR-21, NR-24, NR-27, PENTA-C, PENTA-D
