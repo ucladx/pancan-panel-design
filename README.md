@@ -39,9 +39,22 @@ Gather, rename, compare, review, and shortlist genes from 16 sources:
 * GOAL consortium targets ACTC, BAT-25, BAT-26, BAT-34C4, BAT-40, D10S197, D11S925, D13S175, D17S250, D18S35, D18S474, D18S55, D18S58, D18S64, D18S69, D2S123, D3S1478, D3S1766, D5S107, D5S346, D6S260, HSPH1_T17, MONO-27, NR-21, NR-24, NR-27, PENTA-C, PENTA-D
 * There should be sufficiently more microsatellites in coding regions to detect MSI with more sensitivity
 
+Fetch loci of upstream/downstream probes around microsatellites targeted by GOAL consortium:
+```bash
+curl -sL https://github.com/GoalConsortium/goal_misc/raw/e9966b5/GOAL_GRCh38%2Bviral/Consortium_Probes_All_Final.probes_GRCh38%2Bviral.bed | cut -f-2 -d\| | grep -w MSI | sed -E 's/MSI\|//' > data/goal_msi_targets_grch38.bed
+```
+
+**Note:** Missing downstream probe for MONO-27, NR-24, D18S58 and upstream probe for D10S197, D17S250 - but these are short enough to be captured by 1 probe each
+
 ### Non-coding loci
 
 * GOAL consortium targets fusion breakpoints for ALK, BRAF, CD74, EGFR, ETV6, FGFR1, FGFR2, FGFR3, MET, NTRK1, NTRK2, PAX8, RAF1, RET, ROS1, RSPO3, TFE3, TFEB
+
+Fetch loci of GOAL consortium probes targeting fusion breakpoints and merge probes <=60bp (half a probe) apart:
+```bash
+curl -sL https://github.com/GoalConsortium/goal_misc/raw/e9966b5/GOAL_GRCh38%2Bviral/Consortium_Probes_All_Final.probes_GRCh38%2Bviral.bed | cut -f1 -d\| | grep _Fusion | bedtools merge -i - -d 60 -c 4 -o distinct > data/goal_fusion_targets_grch38.bed
+```
+
 * Promoter regions of TERT and APC
 * Introns and UTRs of cancer genes that contain pathogenic variants per ClinVar and literature review
 * Breakpoints of MSH2 inversion (PMID: 18335504, 12203789, 24114314)
@@ -51,5 +64,13 @@ Gather, rename, compare, review, and shortlist genes from 16 sources:
 ### Viral sequences
 
 * GOAL consortium targets BKV, EBV1, EBV2, HHV8, HPV11, HPV16, HPV18, HPV31, HPV33, HPV35, HPV52, HPV56, HPV58, HPV59, HPV6b, HPyV7, HTLV1, HTLV2, JCV, MCPyV
+
+Fetch viral sequences targeted by GOAL consortium, bgzip, and index:
+```bash
+curl -sL https://github.com/GoalConsortium/goal_misc/raw/e9966b5/GOAL_GRCh38%2Bviral/goal_viral_genomes.fasta -o data/goal_viral_targets.fa
+bgzip -@4 data/goal_viral_targets.fa
+samtools faidx data/goal_viral_targets.fa.gz
+```
+
 * Detect presence/absence of viral DNA - integration site detection or quantification not necessary
 * We must dilute virus probes to avoid under-capture of human targets in tumors with virus content
