@@ -27,6 +27,36 @@ Gather, rename, compare, review, and shortlist genes from 16 sources:
 * chop_heme_211 - [CHOP heme malignancy panel](https://www.testmenu.com/chop/Tests/786447)
 * mayo_heme_42 - [Mayo Clinic's OncoHeme panel](https://www.mayocliniclabs.com/it-mmfiles/Targeted_Genes_Interrogated_by_OncoHeme_Next-Generation_Sequencing.pdf)
 
+Shortlisted 1075 genes for a new panel as follows, and labeled them as "Y" under column "Selected" in [`data/cancer_genes_review.txt`](data/cancer_genes_review.txt):
+1. Include all genes from: fmi_cdx_324, fmi_heme_407, tcga_pancan_299, oncokids_170, goal_core_497, and resistance_77.
+2. Include genes seen in at least 2 of the 16 lists.
+3. Include genes seen in at least 1 of the 16 lists, with >26 mutations per Mbp.
+4. Include genes seen in at least 1 of the 16 lists, with >3.15 mean gain (CN>=2).
+5. Include genes seen in at least 1 of the 16 lists, with >1.5 and <1.82 mean loss (CN<=2). Mean loss <1.5 was on sex chromosomes.
+6. Exclude genes PDE4DIP and FAT3 to reduce DNA-seq costs. They are each ~20kbp and of unknown relevance to cancer.
+7. Add more cancer genes using [OncoKB](https://www.oncokb.org/cancerGenes) summaries, mut/CN burdens, and literature review (`ARID3A, ARID4B, ATP6AP1, ATP6V1B2, ATXN7, CRBN, CYP19A1, DEK, DKK4, EGR1, ERF, EZH1, EZHIP, FLI1, GAB1, GAB2, KBTBD4, KLF3, KNSTRN, LCK, LRP5, LRP6, LTB, MEF2D, MIDEAS, MIR142, NADK, PGBD5, PPP4R2, PRKD1, PTP4A1, PTPN1, RAC2, ROBO1, RRAS, SAMHD1, SERPINB3, SERPINB4, SESN2, SESN3, SETD1B, SETDB2, SMYD3, SP140, SPRTN, STAG1, STAT1, STAT2, STK19, TCL1B, TET3, WIF1, WWTR1`).
+
+**Note:** Mutations per Mbp calculated using TCGA+TARGET MuTect2 MAFs from NCI GDC, and gene sizes from Gencode v35, and mean gain/loss calculated using TCGA+TARGET Gistic2 gene-level absolute CN from NCI GDC.
+
+Extract the gene names and their Ensembl ENSG IDs:
+```bash
+cut -f1,2,9 data/cancer_genes_review.txt | grep -w Y$ | cut -f1,2 | sort > data/exon_targets_gene_list.txt
+```
+
+Create a BED file for these genes' exons with 2bp flanks, using their Gencode basic isoforms except level 3 (not verified nor curated):
+```bash
+gzip -dc /mdl/gencode/gencode.v35.basic.annotation.gff3.gz | grep -w "$(cut -f2 data/exon_targets_gene_list.txt)" | perl -a -F'\t' -ne '%t=map{split("=")} split(";",$F[8]); if(($t{gene_type} eq "protein_coding" and $F[2] eq "CDS" and $t{level} ne "3" and $t{ID}!~m/PAR/) or ($t{gene_type}=~/lncRNA|miRNA|pseudogene/ and $F[2] eq "exon")){$F[3]-=3; $F[4]+=2; print join("\t",@F[0,3,4],$t{gene_name},@F[5,6])."\n"}' | sort -s -k1,1V -k2,2n -k3,3n | bedtools merge -i - -c 4 -o distinct > data/exon_targets_grch38.bed
+```
+
+**Source:** ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_35/gencode.v35.basic.annotation.gff3.gz
+
+Try different combinations of isoforms/exons/annotations in steps above and measure total target space:
+```bash
+awk -F"\t" '{sum+=$3-$2} END {print sum}' data/exon_targets_grch38.bed
+```
+
+**Note:** 2780910 bps in total; 2967992 if we used 8bp flanks; 5985251 if we included all UTRs.
+
 ### Germline SNPs
 
 * Ensure frequent heterozygosity across each human subpopulation, to ensure uniform sensitivity of allelic imbalance (AI)
