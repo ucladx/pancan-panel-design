@@ -21,8 +21,8 @@ def main():
     for var in vcf.fetch():
         # gnomAD v3 lists multiallelic positions in separate rows, so we can safely select only the first ALT
         alt = var.alts[0]
-        # skip rows not containing snps, that failed filters, or are depleted for homozygotes
-        if(len(var.ref) > 1 or len(alt) > 1 or 'PASS' not in var.filter.keys() or var.info.get('nhomalt')[0] == 0):
+        # skip rows not containing snps, FILTER!=PASS, MQ<50, or are depleted for homozygotes
+        if(len(var.ref) > 1 or len(alt) > 1 or 'PASS' not in var.filter.keys() or var.info.get('MQ') < 50 or var.info.get('nhomalt')[0] == 0):
             continue
         # count how many of 9 subpopulations have a frequency of heterozygotes >25%
         min_het_freq = 0.25
@@ -57,4 +57,4 @@ if __name__ == "__main__":
     main()
     end_time = time.time()
     total_time = end_time - start_time
-    sys.stderr.write("Runtime: %.2g seconds\n" % total_time)
+    sys.stderr.write("Runtime: %0.2f seconds\n" % total_time)
