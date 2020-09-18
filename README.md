@@ -94,9 +94,19 @@ Fetch loci of GOAL consortium probes targeting fusion breakpoints and merge prob
 curl -sL https://github.com/GoalConsortium/goal_misc/raw/e9966b5/GOAL_GRCh38%2Bviral/Consortium_Probes_All_Final.probes_GRCh38%2Bviral.bed | cut -f1 -d\| | grep _Fusion | bedtools merge -i - -d 60 -c 4 -o distinct > data/goal_fusion_targets_grch38.bed
 ```
 
+For each gene in the panel, find associated [GeneHancer clusters](https://genome.ucsc.edu/cgi-bin/hgTrackUi?g=geneHancer#TRACK_HTML) with score>325, and then fetch loci of overlapping [ENCODE cCREs](https://genome.ucsc.edu/cgi-bin/hgTrackUi?g=encodeCcreCombined#TRACK_HTML) with score>450:
+```bash
+curl -sL 'https://api.genome.ucsc.edu/getData/track?genome=hg38;track=geneHancerInteractions' | jq -r '.geneHancerInteractions[] | [.geneHancerChrom,.geneHancerStart,.geneHancerEnd,.name,.score,.geneStrand] | @tsv' | perl -a -F'\t' -ne 'BEGIN{%gs=map{chomp; ($_,1)}`cut -f1 data/exon_targets_gene_list.txt`} $F[1]--; ($g)=split("/",$F[3]); print join("\t",@F) if($F[4]>325 && $gs{$g})' | sort -s -k1,1V -k2,2n -k3,3n > data/genehancer_regions_grch38.bed
+curl -sL 'https://api.genome.ucsc.edu/getData/track?genome=hg38;track=encodeCcreCombined' | jq -r '.encodeCcreCombined[] | [.chrom,.chromStart,.chromEnd,.name,.ucscLabel,.score,.strand] | @tsv' | perl -a -F'\t' -ne '$F[1]--; print join("\t",@F[0..2],"$F[3]:$F[4]",@F[5,6])' | sort -s -k1,1V -k2,2n -k3,3n | bedtools intersect -f 1 -wo -a - -b data/genehancer_regions_grch38.bed | perl -a -F'\t' -ne '($g)=split("/",$F[9]); print join("\t",@F[0..2],"$F[3]:$g",@F[4,5])."\n" if($F[4]>450)' > data/encode_ccre_grch38.bed
+```
+
+The ENCODE cCREs cover ~800Kbp which is too large. Reduce this to ~5Kbp by targeting only cCREs associated with APC, FOXA1, PMS2, PTEN, and TERT:
+```bash
+perl -a -F'\t' -pe '($i,$t,$g)=split(":",$F[3]); $_="" unless($g=~m/^(APC|FOXA1|PMS2|PTEN|TERT)$/)' data/encode_ccre_grch38.bed > data/non_coding_targets_grch38.bed
+```
+
 ::TODO::
-* Promoters of APC, FOXA1, PMS2, PTEN, and TERT
-* Untranslated exon splice junctions of all tumor suppressor genes in our panel
+* Untranslated exon splice junctions of all tumor suppressor genes in the panel
 * ClinVar variants in introns and UTRs that are relevant to cancer per literature review
 * Breakpoints of MSH2 inversion (PMID: 18335504, 12203789, 24114314)
 * Breakpoints of PMS2 insertion, including those homologous to PMS2CL pseudogene (PMID: 29792936)
