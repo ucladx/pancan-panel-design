@@ -45,7 +45,7 @@ cut -f1,2,9 data/cancer_genes_review.txt | grep -w Y$ | cut -f1,2 | sort > data/
 
 Create a BED file for these genes' coding regions with 2bp flanks, using their Gencode basic transcripts except level 3 (not verified nor curated):
 ```bash
-gzip -dc /mdl/gencode/gencode.v35.basic.annotation.gff3.gz | grep -w "$(cut -f2 data/exon_targets_gene_list.txt)" | perl -a -F'\t' -ne '%t=map{split("=")} split(";",$F[8]); if(($t{gene_type} eq "protein_coding" and $F[2] eq "CDS" and $t{level} ne "3" and $t{ID}!~m/PAR/) or ($t{gene_type}=~/lncRNA|miRNA|pseudogene/ and $F[2] eq "exon")){$F[3]-=3; $F[4]+=2; print join("\t",@F[0,3,4],$t{gene_name},@F[5,6])."\n"}' | sort -s -k1,1V -k2,2n -k3,3n | bedtools merge -i - -c 4 -o distinct > data/exon_targets_grch38.bed
+gzip -dc /mdl/gencode/gencode.v35.basic.annotation.gff3.gz | grep -w "$(cut -f2 data/exon_targets_gene_list.txt)" | perl -a -F'\t' -ne '%t=map{split("=")} split(";",$F[8]); if(($t{gene_type} eq "protein_coding" and $F[2] eq "CDS" and $t{level} ne "3" and $t{ID}!~m/PAR/) or ($t{gene_type}=~/lncRNA|miRNA|pseudogene/ and $F[2] eq "exon")){$F[3]-=3; $F[4]+=2; print join("\t",@F[0,3,4],$t{gene_name}.":".$F[2],@F[5,6])."\n"}' | sort -s -k1,1V -k2,2n -k3,3n | bedtools merge -i - -c 4 -o distinct > data/exon_targets_grch38.bed
 ```
 
 **Source:** ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_35/gencode.v35.basic.annotation.gff3.gz
@@ -55,7 +55,7 @@ Try different combinations of transcripts/exons/annotations in steps above and m
 awk -F"\t" '{sum+=$3-$2} END {print sum}' data/exon_targets_grch38.bed
 ```
 
-**Note:** 2780910 bps in total; 2967992 if we used 8bp flanks; 5985251 if we included all UTRs.
+**Note:** 2780910 bps in total; 2790267 if we include level 3 transcripts; 2967992 if we used 8bp flanks; 5985251 if we included all UTRs.
 
 ### Germline SNPs
 
@@ -80,7 +80,7 @@ python3 bin/select_gnomad_snps.py --gnomad-vcf /mdl/gnomad/gnomad.genomes.r3.0.s
 
 Fetch loci of upstream/downstream probes around microsatellites targeted by GOAL consortium:
 ```bash
-curl -sL https://github.com/GoalConsortium/goal_misc/raw/e9966b5/GOAL_GRCh38%2Bviral/Consortium_Probes_All_Final.probes_GRCh38%2Bviral.bed | cut -f-2 -d\| | grep -w MSI | sed -E 's/MSI\|//' > data/goal_msi_targets_grch38.bed
+curl -sL https://github.com/GoalConsortium/goal_misc/raw/e9966b5/GOAL_GRCh38%2Bviral/Consortium_Probes_All_Final.probes_GRCh38%2Bviral.bed | cut -f-2 -d\| | grep -w MSI | sed -E 's/MSI\|/Microsatellite:/' > data/goal_msi_targets_grch38.bed
 ```
 
 **Note:** Missing downstream probe for MONO-27, NR-24, D18S58 and upstream probe for D10S197, D17S250. But these are short enough to be captured by 1 probe each.
@@ -91,18 +91,18 @@ curl -sL https://github.com/GoalConsortium/goal_misc/raw/e9966b5/GOAL_GRCh38%2Bv
 
 Fetch loci of GOAL consortium probes targeting fusion breakpoints and merge probes <=60bp (half a probe) apart:
 ```bash
-curl -sL https://github.com/GoalConsortium/goal_misc/raw/e9966b5/GOAL_GRCh38%2Bviral/Consortium_Probes_All_Final.probes_GRCh38%2Bviral.bed | cut -f1 -d\| | grep _Fusion | bedtools merge -i - -d 60 -c 4 -o distinct > data/goal_fusion_targets_grch38.bed
+curl -sL https://github.com/GoalConsortium/goal_misc/raw/e9966b5/GOAL_GRCh38%2Bviral/Consortium_Probes_All_Final.probes_GRCh38%2Bviral.bed | cut -f1 -d\| | grep _Fusion | sed -E 's/_Fusion/:FusionSite/' | bedtools merge -i - -d 60 -c 4 -o distinct > data/goal_fusion_targets_grch38.bed
 ```
 
 For each gene in the panel, find associated [GeneHancer clusters](https://genome.ucsc.edu/cgi-bin/hgTrackUi?g=geneHancer#TRACK_HTML) with score>325, and then fetch loci of overlapping [ENCODE cCREs](https://genome.ucsc.edu/cgi-bin/hgTrackUi?g=encodeCcreCombined#TRACK_HTML) with score>450:
 ```bash
 curl -sL 'https://api.genome.ucsc.edu/getData/track?genome=hg38;track=geneHancerInteractions' | jq -r '.geneHancerInteractions[] | [.geneHancerChrom,.geneHancerStart,.geneHancerEnd,.name,.score,.geneStrand] | @tsv' | perl -a -F'\t' -ne 'BEGIN{%gs=map{chomp; ($_,1)}`cut -f1 data/exon_targets_gene_list.txt`} $F[1]--; ($g)=split("/",$F[3]); print join("\t",@F) if($F[4]>325 && $gs{$g})' | sort -s -k1,1V -k2,2n -k3,3n > data/genehancer_regions_grch38.bed
-curl -sL 'https://api.genome.ucsc.edu/getData/track?genome=hg38;track=encodeCcreCombined' | jq -r '.encodeCcreCombined[] | [.chrom,.chromStart,.chromEnd,.name,.ucscLabel,.score,.strand] | @tsv' | perl -a -F'\t' -ne '$F[1]--; print join("\t",@F[0..2],"$F[3]:$F[4]",@F[5,6])' | sort -s -k1,1V -k2,2n -k3,3n | bedtools intersect -f 1 -wo -a - -b data/genehancer_regions_grch38.bed | perl -a -F'\t' -ne '($g)=split("/",$F[9]); print join("\t",@F[0..2],"$F[3]:$g",@F[4,5])."\n" if($F[4]>450)' > data/encode_ccre_grch38.bed
+curl -sL 'https://api.genome.ucsc.edu/getData/track?genome=hg38;track=encodeCcreCombined' | jq -r '.encodeCcreCombined[] | [.chrom,.chromStart,.chromEnd,.ucscLabel,.name,.score,.strand] | @tsv' | perl -a -F'\t' -ne '$F[1]--; print join("\t",@F[0..2],"$F[3]:$F[4]",@F[5,6])' | sort -s -k1,1V -k2,2n -k3,3n | bedtools intersect -f 1 -wo -a - -b data/genehancer_regions_grch38.bed | perl -a -F'\t' -ne '($g)=split("/",$F[9]); print join("\t",@F[0..2],"$g:$F[3]",@F[4,5])."\n" if($F[4]>450)' > data/encode_ccre_grch38.bed
 ```
 
 The ENCODE cCREs cover ~800Kbp which is too large. Reduce this to ~5Kbp by targeting only cCREs associated with APC, FOXA1, PMS2, PTEN, and TERT:
 ```bash
-perl -a -F'\t' -pe '($i,$t,$g)=split(":",$F[3]); $_="" unless($g=~m/^(APC|FOXA1|PMS2|PTEN|TERT)$/)' data/encode_ccre_grch38.bed > data/non_coding_targets_grch38.bed
+perl -a -F'\t' -pe '($g,$t,$i)=split(":",$F[3]); $_="" unless($g=~m/^(APC|FOXA1|PMS2|PTEN|TERT)$/)' data/encode_ccre_grch38.bed > data/non_coding_targets_grch38.bed
 ```
 
 ::TODO::
