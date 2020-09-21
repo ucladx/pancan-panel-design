@@ -2,9 +2,9 @@
 
 ### Overview of required targets:
 * Cancer genes: Coding exons of all major transcripts of ~1k genes
-* Germline SNPs: Commonly heterozygous ~50k loci to measure allelic imbalance and copy-number
 * Microsatellites: Frequently instable loci in tumor samples with MSI per PCR testing
 * Non-coding loci: UTRs, introns, promoters, etc. with known variants or breakpoints
+* Germline SNPs: Commonly heterozygous ~50k loci to measure allelic imbalance and copy-number
 * Viral sequences: With known relevance to cancer diagnosis/prognosis/treatment
 
 ### Cancer genes
@@ -57,22 +57,6 @@ awk -F"\t" '{sum+=$3-$2} END {print sum}' data/exon_targets_grch38.bed
 
 **Note:** 2780910 bps in total; 2790267 if we include level 3 transcripts; 2967992 if we used 8bp flanks; 5985251 if we included all UTRs.
 
-### Germline SNPs
-
-* Ensure frequent heterozygosity across each human subpopulation, to ensure uniform sensitivity of allelic imbalance (AI)
-* Usable to detect loss of heterozygosity (LOH), copy-number aberration (CNA), homologous recombination deficiency (HRD)
-* SNPs per gene for gene-level AI/CNA, evenly distributed across genome for arm-level CNA, at telomeres to detect telomeric AI
-* Usable for QCs steps like fingerprinting, detecting tumor-normal swaps, cross contamination, and identifying contaminant samples
-
-gnomAD v3 lists GRCh38 variants from 71702 genomes (and no exomes). For each variant, they list AC, AN, and nhomalt per subpopulation. Frequency of heterozygosity per subpopulation can be calculated as: `(AC - 2*nhomalt) / (AN/2)`
-
-Use a script to find ~2m SNPs with a frequency of heterozygotes >25% in all 9 gnomAD v3 subpopulations:
-```bash
-python3 bin/select_gnomad_snps.py --gnomad-vcf /mdl/gnomad/gnomad.genomes.r3.0.sites.vcf.bgz --max-snps 2100000 --output-bed data/snp_targets_grch38.bed
-```
-
-**Source:** https://storage.googleapis.com/gnomad-public/release/3.0/vcf/genomes/gnomad.genomes.r3.0.sites.vcf.bgz
-
 ### Microsatellites
 
 * GOAL consortium targets 28 microsatellites including the 7 sites targeted by the Promega PCR kit
@@ -105,12 +89,30 @@ The ENCODE cCREs cover ~800Kbp which is too large. Reduce this to ~5Kbp by targe
 perl -a -F'\t' -pe '($g,$t,$i)=split(":",$F[3]); $_="" unless($g=~m/^(APC|FOXA1|PMS2|PTEN|TERT)$/)' data/encode_ccre_grch38.bed > data/non_coding_targets_grch38.bed
 ```
 
-::TODO::
-* Untranslated exon splice junctions of all tumor suppressor genes in the panel
-* ClinVar variants in introns and UTRs that are relevant to cancer per literature review
+Manually added the following into [`data/non_coding_targets_grch38.bed`](data/non_coding_targets_grch38.bed):
 * Breakpoints of MSH2 inversion (PMID: 18335504, 12203789, 24114314)
-* Breakpoints of PMS2 insertion, including those homologous to PMS2CL pseudogene (PMID: 29792936)
-* Breakpoints of 40Kbp duplication between upstream promoter of GREM1 and 3' end of SCG5 (PMID: 22561515, 26493165)
+* Breakpoints of PMS2 retrotransposon insertion and intronic regions homologous to PMS2CL pseudogene (PMID: 29792936)
+* Breakpoints of 40Kbp duplication between GREM1 and SCG5 (PMID: 22561515, 26493165)
+
+::TODO::
+* Significantly mutated untranslated regions and splice regions (PMID: 27311963, 26691984)
+* Pathogenic germline variants near cancer susceptibility genes (ClinVar, [April 2020](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/archive/variant_summary_2020-04.txt.gz))
+
+### Germline SNPs
+
+* Ensure frequent heterozygosity across each human subpopulation, to ensure uniform sensitivity of allelic imbalance (AI)
+* Usable to detect loss of heterozygosity (LOH), copy-number aberration (CNA), homologous recombination deficiency (HRD)
+* SNPs per gene for gene-level AI/CNA, evenly distributed across genome for arm-level CNA, at telomeres to detect telomeric AI
+* Usable for QCs steps like fingerprinting, detecting tumor-normal swaps, cross contamination, and identifying contaminant samples
+
+gnomAD v3 lists GRCh38 variants from 71702 genomes (and no exomes). For each variant, they list AC, AN, and nhomalt per subpopulation. Frequency of heterozygosity per subpopulation can be calculated as: `(AC - 2*nhomalt) / (AN/2)`
+
+Use a script to find ~2m SNPs with a frequency of heterozygotes >25% in all 9 gnomAD v3 subpopulations:
+```bash
+python3 bin/select_gnomad_snps.py --gnomad-vcf /mdl/gnomad/gnomad.genomes.r3.0.sites.vcf.bgz --max-snps 2100000 --output-bed data/snp_candidates_grch38.bed
+```
+
+**Source:** https://storage.googleapis.com/gnomad-public/release/3.0/vcf/genomes/gnomad.genomes.r3.0.sites.vcf.bgz
 
 ### Viral sequences
 
