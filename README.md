@@ -110,12 +110,24 @@ Manually added the following into [`data/non_coding_targets_grch38.bed`](data/no
 
 gnomAD v3 lists GRCh38 variants from 71702 genomes (and no exomes). For each variant, they list AC, AN, and nhomalt per subpopulation. Frequency of heterozygosity per subpopulation can be calculated as: `(AC - 2*nhomalt) / (AN/2)`
 
-Use a script to find ~2m SNPs with a frequency of heterozygotes >25% in all 9 gnomAD v3 subpopulations:
+Use a script to find ~2m candidate SNPs with a frequency of heterozygotes >25% in all 9 gnomAD v3 subpopulations:
 ```bash
 python3 bin/select_gnomad_snps.py --gnomad-vcf /mdl/gnomad/gnomad.genomes.r3.0.sites.vcf.bgz --max-snps 2100000 --output-bed data/snp_candidates_grch38.bed
+sort -su -k1,1V -k2,2n -k3,3n data/snp_candidates_grch38.bed -o data/snp_candidates_grch38.bed
 ```
 
 **Source:** https://storage.googleapis.com/gnomad-public/release/3.0/vcf/genomes/gnomad.genomes.r3.0.sites.vcf.bgz
+
+Select the 4874 SNPs that are within the other targets, or up to 240bp away:
+```bash
+cat data/exon_targets_grch38.bed data/goal_msi_targets_grch38.bed data/goal_fusion_targets_grch38.bed data/non_coding_targets_grch38.bed | sort -s -k1,1V -k2,2n -k3,3n | bedtools merge -i - | bedtools window -w 240 -a - -b data/snp_candidates_grch38.bed | cut -f4-7 | sort -su -k1,1V -k2,2n -k3,3n > snp_targets_grch38.bed
+```
+
+From the remaining candidates, select 45126 SNPs (50000-4874) that are most distant from their nearest SNP:
+```bash
+bedtools subtract -a data/snp_candidates_grch38.bed -b snp_targets_grch38.bed | bedtools spacing -i - | sort -k7,7rn | head -n45126 | cut -f1-4 >> snp_targets_grch38.bed
+sort -s -k1,1V -k2,2n -k3,3n snp_targets_grch38.bed -o snp_targets_grch38.bed
+```
 
 ### Viral sequences
 
