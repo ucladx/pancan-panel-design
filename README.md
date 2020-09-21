@@ -89,19 +89,16 @@ The ENCODE cCREs cover ~800Kbp which is too large. Reduce this to ~5Kbp by targe
 perl -a -F'\t' -pe '($g,$t,$i)=split(":",$F[3]); $_="" unless($g=~m/^(APC|FOXA1|PMS2|PTEN|TERT)$/)' data/encode_ccre_grch38.bed > data/non_coding_targets_grch38.bed
 ```
 
-Manually added the following into [`data/non_coding_targets_grch38.bed`](data/non_coding_targets_grch38.bed):
-* Breakpoints of MSH2 inversion (PMID: 18335504, 12203789, 24114314)
-* Breakpoints of PMS2 retrotransposon insertion and intronic regions homologous to PMS2CL pseudogene (PMID: 29792936)
-* Breakpoints of 40Kbp duplication between GREM1 and SCG5 (PMID: 22561515, 26493165)
-
 For each gene in the panel, target splice junctions of 5' UTRs where mutations could cause loss of function:
 ```bash
 gzip -dc /mdl/gencode/gencode.v35.basic.annotation.gff3.gz | grep -w "$(cut -f2 data/exon_targets_gene_list.txt)" | perl -a -F'\t' -ne '%t=map{split("=")} split(";",$F[8]); if($t{gene_type} eq "protein_coding" and $F[2] eq "five_prime_UTR" and $t{level} ne "3" and $t{ID}!~m/PAR/){$p=($F[6] eq "+"?$F[4]:$F[3]); print join("\t",$F[0],$p-1,$p,$t{gene_name}.":5pUTR_splice_site")."\n"}' | sort -s -k1,1V -k2,2n -k3,3n | bedtools merge -i - -c 4 -o distinct >> data/non_coding_targets_grch38.bed
 sort -su -k1,1V -k2,2n -k3,3n data/non_coding_targets_grch38.bed -o data/non_coding_targets_grch38.bed
 ```
 
-::TODO::
-* Significantly mutated untranslated regions and splice regions (PMID: 27311963, 26691984)
+Manually added the following into [`data/non_coding_targets_grch38.bed`](data/non_coding_targets_grch38.bed):
+* Breakpoints of MSH2 inversion (PMID: 18335504, 12203789, 24114314)
+* Breakpoints of PMS2 retrotransposon insertion and intronic regions homologous to PMS2CL pseudogene (PMID: 29792936)
+* Breakpoints of 40Kbp duplication between GREM1 and SCG5 (PMID: 22561515, 26493165)
 * Pathogenic germline variants near cancer susceptibility genes (ClinVar, [April 2020](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/archive/variant_summary_2020-04.txt.gz))
 
 ### Germline SNPs
