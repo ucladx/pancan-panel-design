@@ -120,13 +120,13 @@ sort -su -k1,1V -k2,2n -k3,3n data/snp_candidates_grch38.bed -o data/snp_candida
 
 Select the 4874 SNPs that are within the other targets, or up to 240bp away:
 ```bash
-cat data/exon_targets_grch38.bed data/goal_msi_targets_grch38.bed data/goal_fusion_targets_grch38.bed data/non_coding_targets_grch38.bed | sort -s -k1,1V -k2,2n -k3,3n | bedtools merge -i - | bedtools window -w 240 -a - -b data/snp_candidates_grch38.bed | cut -f4-7 | sort -su -k1,1V -k2,2n -k3,3n > snp_targets_grch38.bed
+cat data/exon_targets_grch38.bed data/goal_msi_targets_grch38.bed data/goal_fusion_targets_grch38.bed data/non_coding_targets_grch38.bed | sort -s -k1,1V -k2,2n -k3,3n | bedtools merge -i - | bedtools window -w 240 -a - -b data/snp_candidates_grch38.bed | cut -f4-7 | sort -su -k1,1V -k2,2n -k3,3n > data/snp_targets_grch38.bed
 ```
 
 From the remaining candidates, select 45126 SNPs (50000-4874) that are most distant from their nearest SNP:
 ```bash
-bedtools subtract -a data/snp_candidates_grch38.bed -b snp_targets_grch38.bed | bedtools spacing -i - | sort -k7,7rn | head -n45126 | cut -f1-4 >> snp_targets_grch38.bed
-sort -s -k1,1V -k2,2n -k3,3n snp_targets_grch38.bed -o snp_targets_grch38.bed
+bedtools subtract -a data/snp_candidates_grch38.bed -b data/snp_targets_grch38.bed | bedtools spacing -i - | sort -k7,7rn | head -n45126 | cut -f1-4 >> data/snp_targets_grch38.bed
+sort -s -k1,1V -k2,2n -k3,3n data/snp_targets_grch38.bed -o data/snp_targets_grch38.bed
 ```
 
 ### Viral sequences
@@ -142,3 +142,16 @@ samtools faidx data/goal_viral_targets.fa.gz
 
 * Detect presence/absence of viral DNA - integration site detection or quantification not necessary
 * We must dilute virus probes to avoid under-capture of human targets in tumors with virus content
+
+### Order probes
+
+At UCLA MDL, we already have probes in the freezer for the GOAL consortium targets. Find out what more we need to order:
+```bash
+cat data/exon_targets_grch38.bed data/goal_fusion_targets_grch38.bed data/goal_msi_targets_grch38.bed data/non_coding_targets_grch38.bed data/snp_targets_grch38.bed | sort -s -k1,1V -k2,2n -k3,3n | bedtools merge -i - -c 4 -o distinct > data/ucla_mdl_targets_grch38.bed
+curl -sL https://github.com/GoalConsortium/goal_misc/raw/e9966b5/GOAL_GRCh38%2Bviral/Consortium_Probes_All_Final.probes_GRCh38%2Bviral.bed | bedtools window -w 60 -v -a data/ucla_mdl_targets_grch38.bed -b - > data/ucla_mdl_targets_not_in_goal_grch38.bed
+```
+
+Estimate how many probes will be needed for 1x tiling (targets <=120bp get one 120bp probe each, others get total bps ÷ 120):
+```bash
+cat data/ucla_mdl_targets_not_in_goal_grch38.bed | awk -F"\t" '{len=$3-$2; sum+=(len<120?120:len)} END {print sum/120}'
+```
