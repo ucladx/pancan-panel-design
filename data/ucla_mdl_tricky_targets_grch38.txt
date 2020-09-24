@@ -1,0 +1,33 @@
+Region	Labels	Length	Skipped_Length	Fraction_Skipped	Reason_to_Keep
+chr1:46571414-46571541	MKNK1:CDS	127	127	1	Overlaps SINE, but decent transcript
+chr2:47407922-47407923	MSH2:PMID_18805575	1	1	1	Overlaps LTR, but known pathogenic SNP
+chr2:47442394-47442395	MSH2:PMID_18335504	1	1	1	Overlaps AT repeat, but known inversion breakpoint
+chr2:60920380-60920480	REL:CDS	100	100	1	Overlaps SINE, but decent transcript
+chr2:189806420-189806504	PMS1:CDS	84	84	1	Overlaps SINE, but decent transcript
+chr4:83480144-83480370	ABRAXAS1:CDS	226	226	1	Overlaps SINE, but decent transcript
+chr6:33308102-33308160	TAPBP:CDS	58	58	1	Overlaps SINE, but decent transcript
+chr8:27313286-27313287	PTK2B:5pUTR_splice_site	1	1	1	Overlaps LTR, but decent splice site
+chr8:140984077-140984078	PTK2:5pUTR_splice_site	1	1	1	Overlaps SINE, but decent splice site
+chr10:21551813-21551923	MLLT10:CDS	110	110	1	Overlaps SINE, but decent transcript
+chr11:108250296-108250297	ATM:PMID_23211698	1	1	1	Overlaps SINE, but known pathogenic SNP
+chr12:65914717-65914916	HMGA2:CDS	199	199	1	Overlaps SINE, but decent transcript
+chr13:48696625-48696626	CYSLTR2:5pUTR_splice_site	1	1	1	Overlaps LINE, but decent splice site
+chr14:68594482-68594605	RAD51B:CDS	123	123	1	Overlaps SINE, but decent transcript
+chr15:89245310-89245311	FANCI:5pUTR_splice_site	1	1	1	Overlaps SINE, but decent splice site
+chr16:27330197-27330198	IL4R:5pUTR_splice_site	1	1	1	Overlaps SINE, but decent splice site
+chr17:5125271-5125272	USP6:5pUTR_splice_site	1	1	1	Overlaps MER1A, but decent splice site
+chr17:5125937-5125938	USP6:5pUTR_splice_site	1	1	1	Overlaps SINE, but decent splice site
+chr17:7661936-7662016	TP53:CDS	80	80	1	Overlaps SINE, but decent transcript
+chr17:31160229-31160230	NF1:DOI_10.4172/2161-1041.1000152	1	1	1	Overlaps SINE, but known pathogenic SNP
+chr17:43127482-43127483	BRCA1:PMID_26350514	1	1	1	Overlaps LTR, but known pathogenic SNP
+chr17:49675894-49675895	SPOP:5pUTR_splice_site	1	1	1	Overlaps SINE, but decent splice site
+chr19:10180184-10180236	DNMT1:CDS	52	52	1	Overlaps SINE, but decent transcript
+chr19:54816498-54816536	KIR3DL1:CDS,KIR3DL1:5pUTR_splice_site	38	38	1	Polymorphic gene family, necessary for immunogenetics
+chr19:54825025-54825080	KIR3DL1:CDS	55	55	1	Polymorphic gene family, necessary for immunogenetics
+chr19:54829358-54829467	KIR3DL1:CDS	109	109	1	Polymorphic gene family, necessary for immunogenetics
+chr19:54829925-54829982	KIR3DL1:CDS	57	57	1	Polymorphic gene family, necessary for immunogenetics
+chr19:54830096-54830277	KIR3DL1:CDS	181	181	1	Polymorphic gene family, necessary for immunogenetics
+chr19:55282196-55282210	BRSK1:CDS,BRSK1:5pUTR_splice_site	14	14	1	Overlaps SINE, but decent transcript
+chr20:56388686-56388687	AURKA:5pUTR_splice_site	1	1	1	Overlaps SINE, but decent splice site
+chr20:56390555-56390556	AURKA:5pUTR_splice_site	1	1	1	Overlaps SINE, but decent splice site
+chrX:15801271-15801516	ZRSR2:CDS	245	245	1	Overlaps SINE, but decent transcript

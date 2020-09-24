@@ -155,3 +155,11 @@ Estimate how many probes will be needed for 1x tiling (targets <=120bp get one 1
 ```bash
 cat data/ucla_mdl_targets_not_in_goal_grch38.bed | awk -F"\t" '{len=$3-$2; sum+=(len<120?120:len)} END {print sum/120}'
 ```
+
+Received probe design from custom panel vendor, and reviewed non-SNP targets with partial or no coverage:
+```bash
+echo -e "Region\tLabels\tLength\tSkipped_Length\tFraction_Skipped\tReason_to_Keep" > data/ucla_mdl_tricky_targets_grch38.txt
+cat data/exon_targets_grch38.bed data/goal_fusion_targets_grch38.bed data/goal_msi_targets_grch38.bed data/non_coding_targets_grch38.bed data/snp_targets_grch38.bed | sort -s -k1,1V -k2,2n -k3,3n | bedtools intersect -wo -a - -b data/all_target_segments_not_covered_by_probes.bed | perl -ane '$l=$F[2]-$F[1]; $s=$F[6]-$F[5]; print join("\t","$F[0]:$F[1]-$F[2]",$F[3],$l,$s,$s/$l,"")."\n" unless($F[3]=~m/^(rs\d+|\.)$/)' >> data/ucla_mdl_tricky_targets_grch38.txt
+```
+
+**Note:** Shortlisted 32 important targets we asked vendor to capture anyway, at the cost of some off-target reads.
