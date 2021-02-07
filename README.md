@@ -163,3 +163,5 @@ cat data/exon_targets_grch38.bed data/goal_fusion_targets_grch38.bed data/goal_m
 ```
 
 **Note:** Shortlisted 32 important targets we asked vendor to capture anyway, at the cost of some off-target reads.
+
+Final target/bait loci of manufactured probes was downloaded from vendor and stored at `ucla_mdl_cancer_ngs_v1_baits.grch38.bed` and `ucla_mdl_cancer_ngs_v1_targets.grch38.bed`.
