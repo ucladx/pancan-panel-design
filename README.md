@@ -168,8 +168,9 @@ Final target/bait loci of manufactured probes was downloaded from vendor and sto
 
 ### Validation and revision
 
-Tom would like to add these 4 genes:
-INO80 - DNA repair, regulates abundance and positioning of nucleosomes, mutated in 4% of DLBCL, algorithmically predicted to be a cancer driver per intogen.org
-LUC7L2 - Splicing factor, low expression in 14% of MDS patients, del(7q) is common and truncating mutations have been reported
-MBD4 - Germline loss predisposes to Uveal Melanoma and Leukemia, targeted by DFCI's OncoPanel (aka Profile)
-SRP72 - Germline loss predisposes to Familial Aplasia and Myelodysplasia, targeted by Mayo's OncoHeme panel
+UCLA colleagues would like to add these 4 genes:
+- INO80 - DNA repair, regulates abundance and positioning of nucleosomes, mutated in 4% of DLBCL, algorithmically predicted to be a cancer driver per intogen.org
+- LUC7L2 - Splicing factor, low expression in 14% of MDS patients, del(7q) is common and truncating mutations have been reported
+- MBD4 - Germline loss predisposes to Uveal Melanoma and Leukemia, targeted by DFCI's OncoPanel (aka Profile)
+- SRP72 - Germline loss predisposes to Familial Aplasia and Myelodysplasia, targeted by Mayo's OncoHeme panel
+- FRK - Somatic mutations in 6% of hepatocellular adenomas, and frequent rearrangements
