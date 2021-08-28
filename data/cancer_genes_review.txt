@@ -192,6 +192,7 @@ CACNA1D	ENSG00000157388	03p21.1	11746	0.302736	25.77	2.5076	1.8123	Y	1										
 PRKCD	ENSG00000163932	03p21.1	3146	0.0160855	5.11	2.5125	1.8110	Y	1														1			1	1	
 PARP3	ENSG00000041880	03p21.2	2525	0.0171451	6.79	2.5077	1.8098	Y	2	1							1									1		
 TLR9	ENSG00000239732	03p21.2	3878	0.0383356	9.89	2.5100	1.8084	Y	1								1									1		
+MBD4	ENSG00000129071	03q21.3	3005	0.0458486	15.26	2.8456	1.9378	Y	1											1						1	1	
 RHOA	ENSG00000067560	03p21.31	1968	0.0106916	5.43	2.5059	1.8113	Y	11		1	1	1	1		1	1	1	1	1		1	1			1	1	A GTPase, is altered in various solid and hematologic malignancies.
 SETD2	ENSG00000181555	03p21.31	8705	0.0649201	7.46	2.5090	1.8146	Y	13	1	1	1		1		1	1	1	1	1	1	1	1	1		1	1	Encodes a tumor suppressor and H3K36 trimethylase. Mutations in this gene have been identified in a variety of cancer types.
 CCR5	ENSG00000160791	03p21.31	3680	0.00915045	2.49	2.5153	1.8176	Y	1				1													1		
@@ -254,6 +255,7 @@ KIT	ENSG00000157404	04q12	5231	0.0305336	5.84	2.7719	1.9276	Y	14	1	1	1	1	1		1	1	
 PDGFRA	ENSG00000134853	04q12	7774	0.0572144	7.36	2.7820	1.9280	Y	14	1	1	1	1	1		1	1	1	1	1	1	1	1	1		1	1	A receptor tyrosine kinase, is altered by mutation, chromosomal rearrangement or amplification in a diverse range of cancers.
 KDR	ENSG00000128052	04q12	5953	0.0422847	7.10	2.7029	1.9288	Y	11	1	1		1	1		1	1	1	1	1		1	1			1	1	A receptor tyrosine kinase, is altered by mutation or amplification in various cancers, most frequently in skin cancers.
 REST	ENSG00000084093	04q12	7908	0.0291851	3.69	2.6454	1.9266	Y	2						1			1								1		A transcriptional repressor, is altered by mutation in various cancer types. Germline mutations of REST are associated with Wilm's tumor.
+SRP72	ENSG00000174780	04q12	4048	0.0136775	3.38	2.6489	1.9268	Y	1																1	1	1	
 EPHA5	ENSG00000145242	04q13.1-q13.2	9905	0.111732	11.28	2.5682	1.9175	Y	6		1			1			1	1	1			1				1	1	A receptor tyrosine kinase, is altered in various cancer types including skin and lung cancers.
 ALB	ENSG00000163631	04q13.3	2385	0.0188788	7.92	2.5973	1.9160	Y	3			1						1					1			1		An abundant protein in blood plasma, is infrequently altered in various cancer types.
 FGF5	ENSG00000138675	04q21.21	5390	0.0250433	4.65	2.5047	1.9019	Y	2							1			1							1	1	
@@ -396,6 +398,7 @@ CCN6	ENSG00000112761	06q21	1881	0.0136775	7.27	2.5695	1.8285	Y	4		1			1			1		1		
 FOXO3	ENSG00000118689	06q21	7690	0.0634752	8.25	2.5845	1.8293	Y	3		1					1							1			1	1	
 FYN	ENSG00000010810	06q21	4208	0.0244654	5.81	2.5719	1.8286	Y	2									1	1							1	1	A receptor tyrosine kinase, is altered by mutation in a variety of cancer types including hematologic malignancies and cholangiocarcinomas.
 HDAC2	ENSG00000196591	06q21	10083	0.0214795	2.13	2.5530	1.8283	Y	3							1	1				1					1	1	
+FRK	ENSG00000111816	06q22.1	13395	0.0128106	0.96	2.5660	1.8294	Y	0																		1	
 ROS1	ENSG00000047936	06q22.1	7638	0.0724331	9.48	2.5627	1.8317	Y	11	1	1		1	1		1	1	1	1	1		1		1		1	1	A receptor tyrosine kinase, is altered by mutation or chromosomal rearrangement in a diverse range of cancers, including lung cancer.
 RSPO3	ENSG00000146374	06q22.33	4835	0.00905413	1.87	2.5829	1.8457	Y	4					1						1		1		1		1	1	
 SGK1	ENSG00000118515	06q23.2	6406	0.0550954	8.60	2.5999	1.8490	Y	6	1	1			1		1	1						1			1	1	A serine/threonine kinase in the PI3K signaling pathways, is altered by mutation in hematologic malignancies.
@@ -450,6 +453,7 @@ POT1	ENSG00000128513	07q31.33	4634	0.0535542	11.56	2.9613	1.9390	Y	8		1			1		1	1
 SMO	ENSG00000128602	07q32.1	4025	0.0513389	12.76	2.9645	1.9447	Y	11	1	1			1		1	1	1	1	1	1	1	1			1	1	A G-protein coupled receptor, is mutated in various cancers including basal cell carcinoma and medulloblastoma.
 BRAF	ENSG00000157764	07q34	14486	0.0664612	4.59	2.9768	1.9424	Y	14	1	1	1	1	1		1	1	1	1	1	1	1	1	1		1	1	An intracellular kinase, is frequently mutated in melanoma, thyroid and lung cancers among others.
 KEL	ENSG00000197993	07q34	2570	0.0519168	20.20	2.9653	1.9384	Y	8	1		1		1		1	1		1		1		1			1	1	
+LUC7L2	ENSG00000146963	07q34	3071	0.00356386	1.16	2.9706	1.9433	Y	0																		1	
 PRSS1	ENSG00000204983	07q34	883	0.717684	812.78	2.9820	1.8674	Y	3							1	1			1						1	1	Encodes the digestive pro-enzyme trypsinogen, which is activated in the small intestine. Mutations in PRSS1 are associated with pancreatitis and increased risk of pancreatic cancer.
 EZH2	ENSG00000106462	07q36.1	3155	0.0284146	9.01	2.9498	1.9337	Y	15	1	1	1	1	1		1	1	1	1	1	1	1	1	1	1	1	1	An epigenetic modifier, is altered by mutation and/or overexpression in solid tumors and hematologic malignancies.
 KMT2C	ENSG00000055609	07q36.1	17096	0.840686	49.17	2.9483	1.9265	Y	12		1	1	1	1		1	1	1	1		1	1	1	1		1	1	A tumor suppressor and histone methyltransferase, is altered in various solid and hematologic malignancies.
@@ -751,6 +755,7 @@ SPRED1	ENSG00000166068	15q14	7298	0.00943941	1.29	2.4889	1.8847	Y	2							1		1		
 MGA	ENSG00000174197	15q15	15276	0.167501	10.96	2.4855	1.8827	Y	5			1						1	1	1			1			1	1	A tumor suppressor and transcription factor, is altered by mutation, deletion or chromosomal translocation in a diverse range of cancers.
 RAD51	ENSG00000051180	15q15.1	2751	0.00789829	2.87	2.4846	1.8840	Y	9	1	1			1		1	1	1	1	1		1				1	1	Encodes a protein involved in DNA double-strand break repair. Germline mutations or overexpression of RAD51 are associated with an increased risk of developing breast cancer.
 BUB1B	ENSG00000156970	15q15.1	3805	0.0165671	4.35	2.4818	1.8825	Y	4					1		1	1			1						1	1	
+INO80	ENSG00000128908	15q15.1	6509	0.0562512	8.64	2.4868	1.8838	Y	1														1			1	1	
 LTK	ENSG00000062524	15q15.1	3260	0.0310152	9.51	2.4857	1.8829	Y	2	1							1									1	1	
 TYRO3	ENSG00000092445	15q15.1	8910	0.269794	30.28	2.4851	1.8828	Y	2	1							1									1		
 KNSTRN	ENSG00000128944	15q15.1	2027	0.00934309	4.61	2.4818	1.8834	Y	1									1								1	1	A component of the mitotic spindle, is mutated in cutaneous squamous cell carcinoma.
@@ -1445,7 +1450,6 @@ ZNF148	ENSG00000163848	03q21.2	9671	0.0419958	4.34	2.8307	1.9350		1													
 CNBP	ENSG00000169714	03q21.3	3347	0.00269698	0.81	2.8409	1.9381		0																		1	
 EEFSEC	ENSG00000132394	03q21.3	2233	0.0135812	6.08	2.8366	1.9374		0																		1	
 LINC01565	ENSG00000198685	03q21.3	2709	0.354171	130.74	2.8405	1.9388		0																		1	
-MBD4	ENSG00000129071	03q21.3	3005	0.0458486	15.26	2.8456	1.9378		1											1						1	1	
 MCM2	ENSG00000073111	03q21.3	3498	0.0376613	10.77	2.8319	1.9378		0																		1	
 PLXNA1	ENSG00000114554	03q21.3	9190	0.17617	19.17	2.8307	1.9372		0																		1	
 RAB7A	ENSG00000075785	03q21.3	5481	0.00346754	0.63	2.8411	1.9388		0																		1	
@@ -1504,7 +1508,6 @@ FIP1L1	ENSG00000145216	04q12	3537	0.285205	80.63	2.7456	1.9278		0															
 GSX2	ENSG00000180613	04q12	1681	0.00895781	5.33	2.7811	1.9279		0																		1	
 NOA1	ENSG00000084092	04q12	2246	0.0267771	11.92	2.6435	1.9265		0																		1	
 SGCB	ENSG00000163069	04q12	4272	0.00809093	1.89	2.6537	1.9285		0																		1	
-SRP72	ENSG00000174780	04q12	4048	0.0136775	3.38	2.6489	1.9268		1																1	1	1	
 ADGRL3	ENSG00000150471	04q13.1	13175	0.0785976	5.97	2.5894	1.9209		0																		1	
 UGT2B17	ENSG00000197888	04q13.2	2101	0.0121364	5.78	2.9244	1.8836		1														1			1		
 ANKRD17	ENSG00000132466	04q13.3	11079	0.107205	9.68	2.6029	1.9163		0																		1	
@@ -1725,7 +1728,6 @@ FBXL4	ENSG00000112234	06q16.1-q16.2	8158	0.030341	3.72	2.5735	1.8360		0									
 ATG5	ENSG00000057663	06q21	4772	0.00799461	1.68	2.6378	1.8303		0																		1	
 LAMA4	ENSG00000112769	06q21	8396	0.0653053	7.78	2.5676	1.8291		1												1					1	1	
 SESN1	ENSG00000080546	06q21	3993	0.0125217	3.14	2.5748	1.8294		1									1								1		A regulator of mTORC1, is mutated at low frequencies in various cancers.
-FRK	ENSG00000111816	06q22.1	13395	0.0128106	0.96	2.5660	1.8294		0																		1	
 GOPC	ENSG00000047932	06q22.1	4664	0.0109805	2.35	2.5627	1.8320		0																		1	
 CEP85L	ENSG00000111860	06q22.31	8339	0.025236	3.03	2.5633	1.8341		0																		1	
 PLN	ENSG00000198523	06q22.31	2997	0.00125217	0.42	2.5642	1.8343		0																		1	
@@ -1844,7 +1846,6 @@ EPHB6	ENSG00000106123	07q34	4095	0.223753	54.64	2.9651	1.9384		0																
 FAM131B	ENSG00000159784	07q34	6080	0.0128106	2.11	2.9660	1.9393		0																		1	
 HIPK2	ENSG00000064393	07q34	15682	0.0412252	2.63	2.9700	1.9438		0																		1	
 KIAA1549	ENSG00000122778	07q34	12578	0.0695434	5.53	2.9711	1.9428		0																		1	
-LUC7L2	ENSG00000146963	07q34	3071	0.00356386	1.16	2.9706	1.9433		0																		1	
 MGAM	ENSG00000257335	07q34	9497	0.103737	10.92	2.9643	1.9411		0																		1	An intestinal glucosidase, is infrequently altered in various cancer types.
 OR9A2	ENSG00000179468	07q34	1042	0.0471971	45.29	2.9663	1.9386		0																		1	
 PRSS37	ENSG00000165076	07q34	1261	0.00886149	7.03	2.9658	1.9417		0																		1	
@@ -2447,7 +2448,6 @@ THBS1	ENSG00000137801	15q14	7877	0.0416105	5.28	2.4801	1.8828		0																
 ZNF770	ENSG00000198146	15q14	5451	0.0167598	3.07	2.5082	1.8919		0																		1	
 DLL4	ENSG00000128917	15q15.1	3470	0.0287998	8.30	2.4857	1.8846		0																		1	
 GCHFR	ENSG00000137880	15q15.1	1497	0.00144481	0.97	2.4848	1.8840		0																		1	
-INO80	ENSG00000128908	15q15.1	6509	0.0562512	8.64	2.4868	1.8838		1														1			1	1	
 ITPKA	ENSG00000137825	15q15.1	1853	0.0101137	5.46	2.4859	1.8828		0																		1	
 KNL1	ENSG00000137812	15q15.1	9681	0.110576	11.42	2.4840	1.8838		0																		1	
 NDUFAF1	ENSG00000137806	15q15.1	1529	0.0209016	13.67	2.4858	1.8829		0																		1	
