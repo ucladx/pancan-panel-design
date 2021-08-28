@@ -50,14 +50,14 @@ cut -f1,2,9 data/cancer_genes_review.txt | grep -w Y$ | cut -f1,2 | sort > data/
 
 Create a BED file for these genes' coding regions with 2bp flanks, using their Gencode basic transcripts except level 3 (not verified nor curated):
 ```bash
-gzip -dc /hot/tracks/gencode.v38.basic.annotation.gff3.gz | grep -w "$(cut -f2 data/exon_targets_gene_list.txt)" | perl -a -F'\t' -ne '%t=map{split("=")} split(";",$F[8]); if(($t{gene_type} eq "protein_coding" and $F[2] eq "CDS" and $t{level} ne "3" and $t{ID}!~m/PAR/) or ($t{gene_type}=~/lncRNA|miRNA|pseudogene/ and $F[2] eq "exon")){$F[3]-=3; $F[4]+=2; print join("\t",@F[0,3,4],$t{gene_name}.":".$F[2],@F[5,6])."\n"}' | sort -s -k1,1V -k2,2n -k3,3n | bedtools merge -i - -c 4 -o distinct > data/exon_targets_grch38.bed
+gzip -dc /hot/tracks/gencode.v38.basic.annotation.gff3.gz | grep -w "$(cut -f2 data/exon_targets_gene_list.txt)" | perl -a -F'\t' -ne '%t=map{split("=")} split(";",$F[8]); if(($t{gene_type} eq "protein_coding" and $F[2] eq "CDS" and $t{level} ne "3" and $t{ID}!~m/PAR/) or ($t{gene_type}=~/lncRNA|miRNA|pseudogene/ and $F[2] eq "exon")){$F[3]-=3; $F[4]+=2; print join("\t",@F[0,3,4],$t{gene_name}.":".$F[2],@F[5,6])."\n"}' | sort -s -k1,1V -k2,2n -k3,3n | bedtools merge -i - -c 4 -o distinct > targets/exon_targets_grch38.bed
 ```
 
 **Source:** ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_38/gencode.v38.basic.annotation.gff3.gz
 
 Try different combinations of transcripts/exons/annotations in steps above and measure total target space:
 ```bash
-awk -F"\t" '{sum+=$3-$2} END {print sum}' data/exon_targets_grch38.bed
+awk -F"\t" '{sum+=$3-$2} END {print sum}' targets/exon_targets_grch38.bed
 ```
 
 **Note:** 2798232 bps in total; 2805929 if we include level 3 transcripts; 2986850 if we used 8bp flanks; 6117858 if we included all UTRs.
@@ -69,7 +69,7 @@ awk -F"\t" '{sum+=$3-$2} END {print sum}' data/exon_targets_grch38.bed
 
 Fetch loci of upstream/downstream probes around microsatellites targeted by GOAL consortium:
 ```bash
-curl -sL https://github.com/GoalConsortium/goal_misc/raw/e9966b5/GOAL_GRCh38%2Bviral/Consortium_Probes_All_Final.probes_GRCh38%2Bviral.bed | cut -f-2 -d\| | grep -w MSI | sed -E 's/MSI\|//; s/$/:Microsatellite/' > data/goal_msi_targets_grch38.bed
+curl -sL https://github.com/GoalConsortium/goal_misc/raw/e9966b5/GOAL_GRCh38%2Bviral/Consortium_Probes_All_Final.probes_GRCh38%2Bviral.bed | cut -f-2 -d\| | grep -w MSI | sed -E 's/MSI\|//; s/$/:Microsatellite/' > targets/goal_msi_targets_grch38.bed
 ```
 
 **Note:** Missing downstream probe for MONO-27, NR-24, D18S58 and upstream probe for D10S197, D17S250. But these are short enough to be captured by 1 probe each.
@@ -80,7 +80,7 @@ curl -sL https://github.com/GoalConsortium/goal_misc/raw/e9966b5/GOAL_GRCh38%2Bv
 
 Fetch loci of GOAL consortium probes targeting fusion breakpoints and merge probes <=60bp (half a probe) apart:
 ```bash
-curl -sL https://github.com/GoalConsortium/goal_misc/raw/e9966b5/GOAL_GRCh38%2Bviral/Consortium_Probes_All_Final.probes_GRCh38%2Bviral.bed | cut -f1 -d\| | grep _Fusion | sed -E 's/_Fusion/:FusionSite/' | bedtools merge -i - -d 60 -c 4 -o distinct > data/goal_fusion_targets_grch38.bed
+curl -sL https://github.com/GoalConsortium/goal_misc/raw/e9966b5/GOAL_GRCh38%2Bviral/Consortium_Probes_All_Final.probes_GRCh38%2Bviral.bed | cut -f1 -d\| | grep _Fusion | sed -E 's/_Fusion/:FusionSite/' | bedtools merge -i - -d 60 -c 4 -o distinct > targets/goal_fusion_targets_grch38.bed
 ```
 
 For each gene in the panel, find associated [GeneHancer clusters](https://genome.ucsc.edu/cgi-bin/hgTrackUi?g=geneHancer#TRACK_HTML) with score>325, and then fetch loci of overlapping [ENCODE cCREs](https://genome.ucsc.edu/cgi-bin/hgTrackUi?g=encodeCcreCombined#TRACK_HTML) with score>450:
@@ -91,16 +91,16 @@ curl -sL 'https://api.genome.ucsc.edu/getData/track?genome=hg38;track=encodeCcre
 
 The ENCODE cCREs cover ~800Kbp which is too large. Reduce this to ~5Kbp by targeting only cCREs associated with APC, FOXA1, PMS2, PTEN, and TERT:
 ```bash
-perl -a -F'\t' -pe '($g,$t,$i)=split(":",$F[3]); $_="" unless($g=~m/^(APC|FOXA1|PMS2|PTEN|TERT)$/)' data/encode_ccre_grch38.bed > data/non_coding_targets_grch38.bed
+perl -a -F'\t' -pe '($g,$t,$i)=split(":",$F[3]); $_="" unless($g=~m/^(APC|FOXA1|PMS2|PTEN|TERT)$/)' data/encode_ccre_grch38.bed > targets/non_coding_targets_grch38.bed
 ```
 
 For each gene in the panel, target the ends of 5'UTRs of MANE transcripts where mutations could cause loss of function:
 ```bash
-gzip -dc /hot/tracks/gencode.v38.basic.annotation.gff3.gz | grep -w "$(cut -f2 data/exon_targets_gene_list.txt)" | perl -a -F'\t' -ne '%t=map{split("=")} split(";",$F[8]); if($t{gene_type} eq "protein_coding" and $F[2] eq "five_prime_UTR" and $t{tag}=~/MANE/ and $t{ID}!~m/PAR/){print join("\t",$F[0],$F[3]-2,($F[3]+118<$F[4]?$F[3]+118:$F[4]),$t{gene_name}.":5pUTR")."\n".join("\t",$F[0],($F[4]-118>$F[3]?$F[4]-118:$F[3]),$F[4]+2,$t{gene_name}.":5pUTR")."\n"}' | sort -s -k1,1V -k2,2n -k3,3n | bedtools merge -i - -c 4 -o distinct >> data/non_coding_targets_grch38.bed
-sort -su -k1,1V -k2,2n -k3,3n data/non_coding_targets_grch38.bed -o data/non_coding_targets_grch38.bed
+gzip -dc /hot/tracks/gencode.v38.basic.annotation.gff3.gz | grep -w "$(cut -f2 data/exon_targets_gene_list.txt)" | perl -a -F'\t' -ne '%t=map{split("=")} split(";",$F[8]); if($t{gene_type} eq "protein_coding" and $F[2] eq "five_prime_UTR" and $t{tag}=~/MANE/ and $t{ID}!~m/PAR/){print join("\t",$F[0],$F[3]-2,($F[3]+118<$F[4]?$F[3]+118:$F[4]),$t{gene_name}.":5pUTR")."\n".join("\t",$F[0],($F[4]-118>$F[3]?$F[4]-118:$F[3]),$F[4]+2,$t{gene_name}.":5pUTR")."\n"}' | sort -s -k1,1V -k2,2n -k3,3n | bedtools merge -i - -c 4 -o distinct >> targets/non_coding_targets_grch38.bed
+sort -su -k1,1V -k2,2n -k3,3n targets/non_coding_targets_grch38.bed -o targets/non_coding_targets_grch38.bed
 ```
 
-Manually added the following into [`data/non_coding_targets_grch38.bed`](data/non_coding_targets_grch38.bed):
+Manually added the following into [`targets/non_coding_targets_grch38.bed`](targets/non_coding_targets_grch38.bed):
 * Breakpoints of MSH2 inversion (PMID: 18335504, 12203789, 24114314)
 * Breakpoints of PMS2 retrotransposon insertion and intronic regions homologous to PMS2CL pseudogene (PMID: 29792936)
 * Breakpoints of 40Kbp duplication between GREM1 and SCG5 (PMID: 22561515, 26493165)
@@ -110,7 +110,7 @@ Downloaded TSV-format catalog data from ebi.ac.uk/gwas for these genome-wide ass
 * 265 SNP loci for Prostate cancer risk prediction (PMID: 33398198)
 * 461 SNP loci for Pan-cancer risk prediction (PMID: 32887889)
 
-Manually converted into `data/gwas_targets_grch38.bed` with 711 unique loci. Data provenance not possible, and parsing out loci was messy and needed regexes. So, cannot document steps for reproducibility.
+Manually converted into `targets/gwas_targets_grch38.bed` with 711 unique loci. Data provenance not possible, and parsing out loci was messy and needed regexes. So, cannot document steps for reproducibility.
 
 ### Germline SNPs
 
@@ -123,39 +123,41 @@ gnomAD v3 lists GRCh38 variants from 71702 genomes (and no exomes). For each var
 
 Use a script to find ~2m candidate SNPs with a frequency of heterozygotes >25% in all 9 gnomAD v3 subpopulations:
 ```bash
-python3 bin/select_gnomad_snps.py --gnomad-vcf /hot/ref/gnomad/gnomad.genomes.r3.0.sites.vcf.bgz --max-snps 2100000 --output-bed data/snp_candidates_grch38.bed
+python3 scripts/select_gnomad_snps.py --gnomad-vcf /hot/ref/gnomad/gnomad.genomes.r3.0.sites.vcf.bgz --max-snps 2100000 --output-bed data/snp_candidates_grch38.bed
 sort -su -k1,1V -k2,2n -k3,3n data/snp_candidates_grch38.bed -o data/snp_candidates_grch38.bed
 ```
 
 **Source:** https://storage.googleapis.com/gcp-public-data--gnomad/release/3.0/vcf/genomes/gnomad.genomes.r3.0.sites.vcf.bgz
 
-Select the 4874 SNPs that are within the other targets, or up to 240bp away:
+Select the SNPs that are within the exonic targets, or up to 240bp away:
 ```bash
-cat data/exon_targets_grch38.bed data/goal_msi_targets_grch38.bed data/goal_fusion_targets_grch38.bed data/non_coding_targets_grch38.bed | sort -s -k1,1V -k2,2n -k3,3n | bedtools merge -i - | bedtools window -w 240 -a - -b data/snp_candidates_grch38.bed | cut -f4-7 | sort -su -k1,1V -k2,2n -k3,3n > data/snp_targets_grch38.bed
+bedtools window -w 240 -a targets/exon_targets_grch38.bed -b data/snp_candidates_grch38.bed | cut -f4-7 | sort -su -k1,1V -k2,2n -k3,3n > targets/snp_targets_grch38.bed
 ```
 
 From the remaining candidates, select 45126 SNPs (50000-4874) that are most distant from their nearest SNP:
 ```bash
-bedtools subtract -a data/snp_candidates_grch38.bed -b data/snp_targets_grch38.bed | bedtools spacing -i - | sort -k7,7rn | head -n45126 | cut -f1-4 >> data/snp_targets_grch38.bed
-sort -s -k1,1V -k2,2n -k3,3n data/snp_targets_grch38.bed -o data/snp_targets_grch38.bed
+bedtools subtract -a data/snp_candidates_grch38.bed -b targets/snp_targets_grch38.bed | bedtools spacing -i - | sort -k7,7rn | head -n45126 | cut -f1-4 >> targets/snp_targets_grch38.bed
+sort -s -k1,1V -k2,2n -k3,3n targets/snp_targets_grch38.bed -o targets/snp_targets_grch38.bed
 ```
 
-### Order probes
+### Design probes
 
-Combine all targets into a single merged BED file:
+Combined all targets into a single merged BED file:
 ```bash
-cat data/exon_targets_grch38.bed data/goal_fusion_targets_grch38.bed data/goal_msi_targets_grch38.bed data/non_coding_targets_grch38.bed data/snp_targets_grch38.bed data/gwas_targets_grch38.bed | sort -s -k1,1V -k2,2n -k3,3n | bedtools merge -i - -c 4 -o distinct > data/ucla_mdl_targets_grch38.bed
+cat targets/*_targets_grch38.bed | sort -s -k1,1V -k2,2n -k3,3n | bedtools merge -i - -c 4 -o distinct > data/ucla_mdl_targets_grch38.bed
 ```
 
-Estimate how many probes will be needed for 1x tiling (targets <=120bp get one 120bp probe each, others get total bps ÷ 120):
+Estimated how many probes will be needed for 1x tiling (targets <=120bp get one 120bp probe each, others get total bps ÷ 120):
 ```bash
 cat data/ucla_mdl_targets_grch38.bed | awk -F"\t" '{len=$3-$2; sum+=(len<120?120:len)} END {print sum/120}'
 ```
 
-Received probe design from custom panel vendor, and reviewed non-SNP targets with partial or no coverage:
+At this point, we sent our targets to the custom panel vendor in BED format. They ran bioinformatics tools to design the tiling and content of 120bp probes across our targets. They also excluded tricky targets that are most likely to cause off-target capture (usually homology with common genomic repeats), and sent us `data/all_target_segments_not_covered_by_probes.bed`. Most of these were intergenic SNPs that we were happy to exclude.
+
+Shortlist and review non-SNP targets with partial or no coverage by vendor's probe design:
 ```bash
 echo -e "Region\tLabels\tLength\tSkipped_Length\tFraction_Skipped\tReason_to_Keep" > data/ucla_mdl_tricky_targets_grch38.txt
-cat data/exon_targets_grch38.bed data/goal_fusion_targets_grch38.bed data/goal_msi_targets_grch38.bed data/non_coding_targets_grch38.bed data/snp_targets_grch38.bed data/gwas_targets_grch38.bed | sort -s -k1,1V -k2,2n -k3,3n | bedtools intersect -wo -a - -b data/all_target_segments_not_covered_by_probes.bed | perl -ane '$l=$F[2]-$F[1]; $s=$F[6]-$F[5]; print join("\t","$F[0]:$F[1]-$F[2]",$F[3],$l,$s,$s/$l,"")."\n" unless($F[3]=~m/^(rs\d+|\.)$/)' >> data/ucla_mdl_tricky_targets_grch38.txt
+cat targets/*_targets_grch38.bed | sort -s -k1,1V -k2,2n -k3,3n | bedtools intersect -wo -a - -b data/all_target_segments_not_covered_by_probes.bed | perl -ane '$l=$F[2]-$F[1]; $s=$F[6]-$F[5]; print join("\t","$F[0]:$F[1]-$F[2]",$F[3],$l,$s,$s/$l,"")."\n" unless($F[3]=~m/^(rs\d+|\.)$/)' >> data/ucla_mdl_tricky_targets_grch38.txt
 ```
 
 **Note:** Shortlisted 32 important targets we asked vendor to capture anyway, at the cost of some off-target reads.
