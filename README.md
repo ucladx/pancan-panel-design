@@ -41,7 +41,7 @@ Shortlist 1080 genes for a new panel as follows, and label them as "Y" under col
     - `SRP72` - Germline loss predisposes to Familial Aplasia and Myelodysplasia, targeted by Mayo's OncoHeme panel
     - `FRK` - Somatic mutations in 6% of hepatocellular adenomas, and frequent rearrangements
 
-**Note:** Mutations per Mbp calculated using TCGA+TARGET MuTect2 MAFs from NCI GDC, and gene sizes from Gencode v35, and mean gain/loss calculated using TCGA+TARGET Gistic2 gene-level absolute CN from NCI GDC.
+Mutations per Mbp calculated using TCGA+TARGET MuTect2 MAFs from NCI GDC, and gene sizes from Gencode v35, and mean gain/loss calculated using TCGA+TARGET Gistic2 gene-level absolute CN from NCI GDC.
 
 Extract the gene names and their Ensembl ENSG IDs:
 ```bash
@@ -60,7 +60,7 @@ Try different combinations of transcripts/exons/annotations in steps above and m
 awk -F"\t" '{sum+=$3-$2} END {print sum}' targets/exon_targets_grch38.bed
 ```
 
-**Note:** 2798232 bps in total; 2805929 if we include level 3 transcripts; 2986850 if we used 8bp flanks; 6117858 if we included all UTRs.
+2798232 bps in total; 2805929 if we include level 3 transcripts; 2986850 if we used 8bp flanks; 6117858 if we included all UTRs.
 
 ### Microsatellites
 
@@ -72,7 +72,7 @@ Fetch loci of upstream/downstream probes around microsatellites targeted by GOAL
 curl -sL https://github.com/GoalConsortium/goal_misc/raw/e9966b5/GOAL_GRCh38%2Bviral/Consortium_Probes_All_Final.probes_GRCh38%2Bviral.bed | cut -f-2 -d\| | grep -w MSI | sed -E 's/MSI\|//; s/$/:Microsatellite/' > targets/goal_msi_targets_grch38.bed
 ```
 
-**Note:** Missing downstream probe for MONO-27, NR-24, D18S58 and upstream probe for D10S197, D17S250. But these are short enough to be captured by 1 probe each.
+Missing downstream probe for MONO-27, NR-24, D18S58 and upstream probe for D10S197, D17S250. But these are short enough to be captured by 1 probe each.
 
 ### Non-coding loci
 
@@ -140,7 +140,7 @@ bedtools subtract -a data/snp_candidates_grch38.bed -b targets/snp_targets_grch3
 sort -s -k1,1V -k2,2n -k3,3n targets/snp_targets_grch38.bed -o targets/snp_targets_grch38.bed
 ```
 
-### Design probes
+### Probe design
 
 Combined all targets into a single merged BED file:
 ```bash
@@ -152,14 +152,24 @@ Estimated how many probes will be needed for 1x tiling (targets <=120bp get one 
 cat data/ucla_mdl_targets_grch38.bed | awk -F"\t" '{len=$3-$2; sum+=(len<120?120:len)} END {print sum/120}'
 ```
 
-At this point, we sent our targets to the custom panel vendor in BED format. They ran bioinformatics tools to design the tiling and content of 120bp probes across our targets. They also excluded tricky targets that are most likely to cause off-target capture (usually homology with common genomic repeats), and sent us `data/all_target_segments_not_covered_by_probes.bed`. Most of these were intergenic SNPs that we were happy to exclude.
+At this point, we sent our targets to the custom panel vendor in BED format. They ran bioinformatics tools to design the tiling and content of 120bp probes across our targets. They also excluded tricky targets that are most likely to cause off-target capture (usually homology with common genomic repeats), and sent us `data/vendor_skipped_targets.bed`. Over 8000 of these were intergenic SNPs that we were happy to exclude. But we reviewed the remaining for importance.
 
-Shortlist and review non-SNP targets with partial or no coverage by vendor's probe design:
+Review non-SNP targets with partial or no coverage by vendor's probe design:
 ```bash
 echo -e "Region\tLabels\tLength\tSkipped_Length\tFraction_Skipped\tReason_to_Keep" > data/ucla_mdl_tricky_targets_grch38.txt
-cat targets/*_targets_grch38.bed | sort -s -k1,1V -k2,2n -k3,3n | bedtools intersect -wo -a - -b data/all_target_segments_not_covered_by_probes.bed | perl -ane '$l=$F[2]-$F[1]; $s=$F[6]-$F[5]; print join("\t","$F[0]:$F[1]-$F[2]",$F[3],$l,$s,$s/$l,"")."\n" unless($F[3]=~m/^(rs\d+|\.)$/)' >> data/ucla_mdl_tricky_targets_grch38.txt
+cat targets/*_targets_grch38.bed | sort -s -k1,1V -k2,2n -k3,3n | bedtools intersect -wo -a - -b data/vendor_skipped_targets.bed | perl -ane '$l=$F[2]-$F[1]; $s=$F[6]-$F[5]; print join("\t","$F[0]:$F[1]-$F[2]",$F[3],$l,$s,$s/$l,"")."\n" unless($F[3]=~m/^(rs\d+|\.)$/)' >> data/ucla_mdl_tricky_targets_grch38.txt
 ```
 
-**Note:** Shortlisted 32 important targets we asked vendor to capture anyway, at the cost of some off-target reads.
+Shortlisted 32 important targets we asked vendor to capture anyway, at the cost of some off-target reads. Final target/bait loci of manufactured probes from vendor are stored at `ucla_mdl_cancer_ngs_v1_baits.grch38.bed` and `ucla_mdl_cancer_ngs_v1_targets.grch38.bed`. These are useful for calculating hybrid selection metrics. Note that bait loci are merged and precise tiling/genomic loci of each 120bp bait is not indicated. Most vendors consider this proprietary, but will share this with their clients under an NDA.
 
-Final target/bait loci of manufactured probes from vendor are stored at `ucla_mdl_cancer_ngs_v1_baits.grch38.bed` and `ucla_mdl_cancer_ngs_v1_targets.grch38.bed`. These are useful for calculating hybrid selection metrics. Note that bait loci are merged and precise tiling/genomic loci of each 120bp bait is not indicated. Most vendors consider this proprietary, but will share this with their clients under an NDA.
+### Optimization
+
+Captured 2 pools of 8 FFPE samples each and sequenced on a HiSeq 2500 Rapid at 2x100bp. Per Picard HsMetrics, capture efficiency (`FOLD_ENRICHMENT`) was poor due to abundance of off-target reads, mostly from intergenic SNPs. On vendor's recommendation, we tried it again with post-hyb wash temperature increased from 68deg to 70deg. `FOLD_ENRICHMENT` roughly doubled, though could be better. These were sequenced on a NovaSeq 6000 SP at 2x150bp, which is not expected to affect `FOLD_ENRICHMENT`. Tagged this dataset as v1.2 and shared with vendor for further analysis. They ran scripts that find the closest matching probe per off-target read, and then ranks all probes by percent-contribution to the total number of off-target reads. Received `data/ucla_mdl_cancer_ngs_v1.2_ranked_probes.bed` from vendor.
+
+Download a RepeatMasker BED file and find the type of repeats that contribute the most to off-target reads:
+```bash
+curl -sL https://hgdownload.cse.ucsc.edu/goldenpath/hg38/database/rmsk.txt.gz | gzip -dc | perl -a -F'\t' -ne 'print join("\t",@F[5..7],"$F[12]:$F[10]",$F[2],$F[9])."\n"' > data/repeat_masker_grch38.bed
+bedtools intersect -wao -f 0.25 -a data/ucla_mdl_cancer_ngs_v1.2_ranked_probes.bed -b data/repeat_masker_grch38.bed | awk -F"\t" 'OFS="\t" {sum[$9]+=$5} END {for (i in sum) print sum[i],i}' | sort -k1,1rg | less
+```
+
+77% of off-bait reads are from targets overlapping `Alu` repeats of which 45% are `AluS` repeats, 23% are `AluY`, and 7% are `AluJ`. Another 12% of off-bait reads are from simple 2-mer repeats like `(TG)n`, `(AC)n`, `(CA)n`, and `(GT)n`.
