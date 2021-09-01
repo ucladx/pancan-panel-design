@@ -41,7 +41,7 @@ Shortlist 1080 genes for a new panel as follows, and label them as "Y" under col
     - `SRP72` - Germline loss predisposes to Familial Aplasia and Myelodysplasia, targeted by Mayo's OncoHeme panel
     - `FRK` - Somatic mutations in 6% of hepatocellular adenomas, and frequent rearrangements
 
-Mutations per Mbp calculated using TCGA+TARGET MuTect2 MAFs from NCI GDC, and gene sizes from Gencode v35, and mean gain/loss calculated using TCGA+TARGET Gistic2 gene-level absolute CN from NCI GDC.
+Mutations per Mbp calculated using TCGA+TARGET MuTect2 MAFs from NCI GDC, and gene sizes from Gencode v35. Mean gain/loss calculated using TCGA+TARGET Gistic2 gene-level absolute CN from NCI GDC.
 
 Extract the gene names and their Ensembl ENSG IDs:
 ```bash
@@ -129,21 +129,28 @@ sort -su -k1,1V -k2,2n -k3,3n data/snp_candidates_grch38.bed -o data/snp_candida
 
 **Source:** https://storage.googleapis.com/gcp-public-data--gnomad/release/3.0/vcf/genomes/gnomad.genomes.r3.0.sites.vcf.bgz
 
-Exclude SNPs <90bp from an Alu repeat, major contributors to off-bait capture (Ref: [2f565c1](https://github.com/ucladx/panel-design/blob/2f565c19d2a8f9e11c46b43199f4ca3926b12bf3/README.md#optimization)):
+We captured and sequenced ~42k of these SNPs in the v1 design using 16 FFPE samples and analyzed them. Major contributors to off-bait capture are Alu repeats (Ref: [2f565c1](https://github.com/ucladx/panel-design/blob/2f565c19d2a8f9e11c46b43199f4ca3926b12bf3/README.md#optimization)).
+
+Exclude SNPs <90bp from an Alu repeat:
 ```bash
 curl -sL https://hgdownload.cse.ucsc.edu/goldenpath/hg38/database/rmsk.txt.gz | gzip -dc | perl -a -F'\t' -ne 'print join("\t",@F[5..7],"$F[12]:$F[10]",$F[2],$F[9])."\n"' > data/repeat_masker_grch38.bed
 grep Alu: data/repeat_masker_grch38.bed | bedtools window -v -w 90 -a data/snp_candidates_grch38.bed -b - > data/snp_candidates_grch38.bed_
 mv -f data/snp_candidates_grch38.bed_ data/snp_candidates_grch38.bed
 ```
 
-Target 4023 SNPs within exon targets or <240bp near them, which gives 724 genes at least 1 SNP likely to help detect LOH:
+From the per-target Picard HsMetrics of an average sample, choose SNPs with >0.5 and <1.5 normalized depth:
 ```bash
-bedtools window -w 240 -a targets/exon_targets_grch38.bed -b data/snp_candidates_grch38.bed | cut -f5-8 | sort -su -k1,1V -k2,2n -k3,3n | sed 's/$/:SNP_LOH/' > targets/snp_targets_grch38.bed
+grep -v ^chrom /hot/bams/mdl_cancer_v1.2/NGSPanel_FFPE012.md.bam.hsmetrics_by_target | cut -f1-3,8 | bedtools window -w 60 -a - -b data/snp_candidates_grch38.bed | awk -F'\t' '{if($4>0.5 && $4<1.5) print}' | cut -f5- | sort -su -k1,1V -k2,2n -k3,3n > data/snp_candidates_good_grch38.bed
 ```
 
-Add 11977 more SNPs (16k total, sufficient for HRD) not within regions skipped or flagged by vendor, and are most distant from their nearest SNPs:
+Target 2390 SNPs within exon targets or <240bp near them, which gives >650 genes at least 1 SNP likely to help detect LOH (don't choose >1 SNP <200bp apart):
 ```bash
-cut -f1-3 targets/snp_targets_grch38.bed data/vendor_flagged_probes.bed data/vendor_skipped_targets.bed | sort -su -k1,1V -k2,2n -k3,3n | bedtools subtract -a data/snp_candidates_grch38.bed -b - | bedtools spacing -i - | sort -k7,7rn | head -n11977 | cut -f1-4 | sed 's/$/:SNP_CNV/' >> targets/snp_targets_grch38.bed
+bedtools window -w 240 -a targets/exon_targets_grch38.bed -b data/snp_candidates_good_grch38.bed | cut -f5-8 | sort -su -k1,1V -k2,2n -k3,3n | bedtools spacing -i - | awk -F'\t' '{if($5>=200) print}' | cut -f1-4 | sed 's/$/:SNP_LOH/' > targets/snp_targets_grch38.bed
+```
+
+Add 13610 more SNPs (16k total, sufficient for HRD) not within regions skipped or flagged by vendor, and are most distant from their nearest SNPs:
+```bash
+grep SNP_LOH$ targets/snp_targets_grch38.bed | bedtools slop -b 200 -g /hot/ref/GRCh38_Verily_v1.genome.fa.fai -i | cut -f1-3 - data/vendor_flagged_probes.bed data/vendor_skipped_targets.bed | sort -su -k1,1V -k2,2n -k3,3n | bedtools subtract -a data/snp_candidates_good_grch38.bed -b - | bedtools spacing -i - | sort -k7,7rn | head -n13610 | cut -f1-4 | sed 's/$/:SNP_CNV/' >> targets/snp_targets_grch38.bed
 sort -s -k1,1V -k2,2n -k3,3n targets/snp_targets_grch38.bed -o targets/snp_targets_grch38.bed
 ```
 
