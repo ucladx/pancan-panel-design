@@ -86,12 +86,12 @@ curl -sL https://github.com/GoalConsortium/goal_misc/raw/e9966b5/GOAL_GRCh38%2Bv
 For each gene in the panel, find associated [GeneHancer clusters](https://genome.ucsc.edu/cgi-bin/hgTrackUi?g=geneHancer#TRACK_HTML) with score>325, and then fetch loci of overlapping [ENCODE cCREs](https://genome.ucsc.edu/cgi-bin/hgTrackUi?g=encodeCcreCombined#TRACK_HTML) with score>450:
 ```bash
 curl -sL 'https://api.genome.ucsc.edu/getData/track?genome=hg38;track=geneHancerInteractions' | jq -r '.geneHancerInteractions[] | [.geneHancerChrom,.geneHancerStart,.geneHancerEnd,.name,.score,.geneStrand] | @tsv' | perl -a -F'\t' -ne 'BEGIN{%gs=map{chomp; ($_,1)}`cut -f1 data/exon_targets_gene_list.txt`} $F[1]--; ($g)=split("/",$F[3]); print join("\t",@F) if($F[4]>325 && $gs{$g})' | sort -s -k1,1V -k2,2n -k3,3n > data/genehancer_regions_grch38.bed
-curl -sL 'https://api.genome.ucsc.edu/getData/track?genome=hg38;track=encodeCcreCombined' | jq -r '.encodeCcreCombined[] | [.chrom,.chromStart,.chromEnd,.ucscLabel,.name,.score,.strand] | @tsv' | perl -a -F'\t' -ne '$F[1]--; print join("\t",@F[0..2],"$F[3]:$F[4]",@F[5,6])' | sort -s -k1,1V -k2,2n -k3,3n | bedtools intersect -f 1 -wo -a - -b data/genehancer_regions_grch38.bed | perl -a -F'\t' -ne '($g)=split("/",$F[9]); print join("\t",@F[0..2],"$g:$F[3]",@F[4,5])."\n" if($F[4]>450)' > data/encode_ccre_grch38.bed
+curl -sL 'https://api.genome.ucsc.edu/getData/track?genome=hg38;track=encodeCcreCombined' | jq -r '.encodeCcreCombined[] | [.chrom,.chromStart,.chromEnd,.ucscLabel,.name,.score,.strand] | @tsv' | perl -a -F'\t' -ne '$F[1]--; print join("\t",@F[0..3,5,6])' | sort -s -k1,1V -k2,2n -k3,3n | bedtools intersect -f 1 -wo -a - -b data/genehancer_regions_grch38.bed | perl -a -F'\t' -ne '($g)=split("/",$F[9]); print join("\t",@F[0..2],"$g:$F[3]",@F[4,5])."\n" if($F[4]>450)' > data/encode_ccre_grch38.bed
 ```
 
 The ENCODE cCREs cover ~800Kbp which is too large. Reduce this to ~5Kbp by targeting only cCREs associated with APC, FOXA1, PMS2, PTEN, and TERT:
 ```bash
-perl -a -F'\t' -pe '($g,$t,$i)=split(":",$F[3]); $_="" unless($g=~m/^(APC|FOXA1|PMS2|PTEN|TERT)$/)' data/encode_ccre_grch38.bed > targets/non_coding_targets_grch38.bed
+perl -a -F'\t' -pe '($g,$t)=split(":",$F[3]); $_="" unless($g=~m/^(APC|FOXA1|PMS2|PTEN|TERT)$/)' data/encode_ccre_grch38.bed > targets/non_coding_targets_grch38.bed
 ```
 
 For each gene in the panel, target the ends of 5'UTRs of MANE transcripts where mutations could cause loss of function:
@@ -100,7 +100,18 @@ gzip -dc /hot/tracks/gencode.v38.basic.annotation.gff3.gz | grep -w "$(cut -f2 d
 sort -su -k1,1V -k2,2n -k3,3n targets/non_coding_targets_grch38.bed -o targets/non_coding_targets_grch38.bed
 ```
 
-Manually added the following into [`targets/non_coding_targets_grch38.bed`](targets/non_coding_targets_grch38.bed):
+Fetch loci of Pathogenic and Likely Pathogenic (P/LP) mutations with decent evidence from ClinVar related to cancer:
+```bash
+curl -sL 'https://api.genome.ucsc.edu/getData/track?genome=hg38;track=clinvarMain' | jq -r '.clinvarMain[] | [.chrom,.chromStart,.chromEnd,._variantId,._clinSignCode,.reviewStatus,.phenotypeList] | @tsv' | perl -a -F'\t' -ne 'print if($F[4]=~m/^P|LP$/ && $F[5]=~m/practice guideline|expert panel|multiple submitters/i) && $F[6]=~m/cancer|lynch|neoplas|tumor|adenoma|carcinoma|li-fraumeni|polyposis|hippel-lindau/i' | cut -f1-4 | sort -su -k1,1V -k2,2n -k3,3n > data/clinvar_plp_muts_grch38.bed
+```
+
+Target the subset of P/LP ClinVar mutations that do not overlap targeted exons:
+```bash
+bedtools subtract -a data/clinvar_plp_muts_grch38.bed -b targets/exon_targets_grch38.bed | sed 's/$/:ClinVar/' | sort -su -k1,1V -k2,2n -k3,3n >> targets/non_coding_targets_grch38.bed
+sort -s -k1,1V -k2,2n -k3,3n targets/non_coding_targets_grch38.bed -o targets/non_coding_targets_grch38.bed
+```
+
+Manually added the following into `targets/non_coding_targets_grch38.bed`:
 * Breakpoints of MSH2 inversion (PMID: 18335504, 12203789, 24114314)
 * Breakpoints of PMS2 retrotransposon insertion and intronic regions homologous to PMS2CL pseudogene (PMID: 29792936)
 * Breakpoints of 40Kbp duplication between GREM1 and SCG5 (PMID: 22561515, 26493165)
@@ -129,7 +140,7 @@ sort -su -k1,1V -k2,2n -k3,3n data/snp_candidates_grch38.bed -o data/snp_candida
 
 **Source:** https://storage.googleapis.com/gcp-public-data--gnomad/release/3.0/vcf/genomes/gnomad.genomes.r3.0.sites.vcf.bgz
 
-We captured and sequenced ~42k of these SNPs in the v1 design using 16 FFPE samples and analyzed them. Major contributors to off-bait capture are Alu repeats (Ref: [2f565c1](https://github.com/ucladx/panel-design/blob/2f565c19d2a8f9e11c46b43199f4ca3926b12bf3/README.md#optimization)).
+We captured and sequenced ~42k of these SNPs in the v1 design using 16 FFPE samples and analyzed them. Per testing, major contributors to off-bait capture are Alu repeats.
 
 Exclude SNPs <90bp from an Alu repeat, or within genomic loci flagged by vendor as contributors to off-bait capture:
 ```bash
@@ -137,9 +148,9 @@ curl -sL https://hgdownload.cse.ucsc.edu/goldenpath/hg38/database/rmsk.txt.gz | 
 grep Alu: data/repeat_masker_grch38.bed | grep -P "^chr(\d+|X|Y)\t" | bedtools slop -b 90 -g /hot/ref/GRCh38_Verily_v1.genome.fa.fai -i | cut -f1-3 - data/vendor_flagged_probes.bed data/vendor_flagged_targets.bed | sort -su -k1,1V -k2,2n -k3,3n | bedtools subtract -a data/snp_candidates_grch38.bed -b - > data/snp_candidates_good_grch38.bed
 ```
 
-Using per-target Picard HsMetrics across 16 samples, choose SNPs with >0.5 and <1.5 normalized depth in >=12 samples:
+Using per-target Picard HsMetrics across 16 samples (MQ>=1), choose SNPs with >0.5 and <1.5 normalized depth in >=12 samples:
 ```bash
-grep -hv ^chrom /hot/bams/mdl_cancer_v1.2/*.md.bam.hsmetrics_by_target | cut -f1-3,8 | awk -F'\t' '{if($4>0.5 && $4<1.5){c[$1"\t"$2"\t"$3]++}} END{for(v in c){if(c[v]>=12){print v}}}' | sort -su -k1,1V -k2,2n -k3,3n | bedtools window -w 60 -a - -b data/snp_candidates_good_grch38.bed | cut -f4- | sort -su -k1,1V -k2,2n -k3,3n > data/snp_candidates_good_grch38.bed_
+grep -hv ^chrom /hot/bams/mdl_cancer_v1.2/*.mq1.hsmetrics_by_target | cut -f1-3,8 | awk -F'\t' '{if($4>0.5 && $4<1.5){c[$1"\t"$2-1"\t"$3]++}} END{for(v in c){if(c[v]>=12){print v}}}' | sort -su -k1,1V -k2,2n -k3,3n | bedtools window -w 60 -a - -b data/snp_candidates_good_grch38.bed | cut -f4- | sort -su -k1,1V -k2,2n -k3,3n > data/snp_candidates_good_grch38.bed_
 mv -f data/snp_candidates_good_grch38.bed_ data/snp_candidates_good_grch38.bed
 ```
 
@@ -166,27 +177,34 @@ Estimated how many probes will be needed for 1x tiling (targets <=120bp get one 
 bedtools merge -i data/ucla_mdl_targets_grch38.bed -c 4 -o distinct | awk -F"\t" '{len=$3-$2; sum+=(len<120?120:len)} END {print sum/120}'
 ```
 
-At this point, we sent our targets to the custom panel vendor in BED format. They ran bioinformatics tools to design the tiling and content of 120bp probes across our targets. They also excluded tricky targets that are most likely to cause off-target capture (usually homology with common genomic repeats), and sent us `data/vendor_flagged_targets.bed`. Over 8000 of these were intergenic SNPs that we were happy to exclude. But we reviewed the remaining for importance.
+At this point, we sent our targets to the custom panel vendor in BED format. They ran bioinformatics tools to design the tiling and content of 120bp probes across our targets. They also flagged tricky targets that are most likely to cause off-bait capture (usually homology with common genomic repeats), and sent us `data/vendor_flagged_targets.bed`. Over 8k of these were intergenic SNPs that we removed from the design, since the remaining 42k were sufficient for HRD/LOH detection. We reviewed the remaining non-SNP targets based on importance.
 
 Review non-SNP targets with partial or no coverage by vendor's probe design:
 ```bash
 echo -e "Region\tLabels\tLength\tSkipped_Length\tFraction_Skipped\tReason_to_Keep" > data/ucla_mdl_tricky_targets_grch38.txt
-cat targets/*_targets_grch38.bed | sort -s -k1,1V -k2,2n -k3,3n | bedtools intersect -wo -a - -b data/vendor_flagged_targets.bed | perl -ane '$l=$F[2]-$F[1]; $s=$F[6]-$F[5]; print join("\t","$F[0]:$F[1]-$F[2]",$F[3],$l,$s,$s/$l,"")."\n" unless($F[3]=~m/^(rs\d+|\.)$/)' >> data/ucla_mdl_tricky_targets_grch38.txt
+bedtools intersect -wo -a data/ucla_mdl_targets_grch38.bed -b data/vendor_flagged_targets.bed | perl -ane '$l=$F[2]-$F[1]; $s=$F[6]-$F[5]; print join("\t","$F[0]:$F[1]-$F[2]",$F[3],$l,$s,$s/$l,"")."\n" unless($F[3]=~m/^(rs\d+|\.)$/)' >> data/ucla_mdl_tricky_targets_grch38.txt
 ```
 
-Shortlisted 32 important targets we asked vendor to capture anyway, at the cost of some off-target reads. Final target/bait loci of manufactured probes from vendor are stored at `ucla_mdl_cancer_ngs_v1_baits.grch38.bed` and `ucla_mdl_cancer_ngs_v1_targets.grch38.bed`. These are useful for calculating hybrid selection metrics. Note that bait loci are merged and precise tiling/genomic loci of each 120bp bait is not indicated. Most vendors consider this proprietary, but will share this with their clients under an NDA.
+Shortlisted 32 important targets in `data/ucla_mdl_tricky_targets_grch38.txt` we asked vendor to capture anyway, at the cost of some off-bait reads. Final target/bait loci of manufactured probes from vendor are stored at `ucla_mdl_cancer_ngs_v1_baits.grch38.bed` and `ucla_mdl_cancer_ngs_v1_targets.grch38.bed`. These are useful for calculating hybrid selection metrics. Note that bait loci are merged and precise tiling/genomic loci of each 120bp bait is not indicated. Most vendors consider this proprietary, but will share this with their clients under an NDA.
 
-### Optimization
+### Testing
 
-Captured 2 pools of 8 FFPE samples each and sequenced on a HiSeq 2500 Rapid at 2x100bp. Per Picard HsMetrics, capture efficiency (`FOLD_ENRICHMENT`) was poor due to abundance of off-target reads, mostly from intergenic SNPs. On vendor's recommendation, we tried it again with post-hyb wash temperature increased from 68deg to 70deg. `FOLD_ENRICHMENT` roughly doubled, though could be better. These were sequenced on a NovaSeq 6000 SP at 2x150bp, which is not expected to affect `FOLD_ENRICHMENT`. Tagged this dataset as v1.2 and shared with vendor for further analysis. They ran scripts that find the closest matching probe per off-bait read, and then ranks all probes by percent-contribution to the total number of off-bait reads. Received `data/ucla_mdl_cancer_ngs_v1.2_ranked_probes.bed` from vendor.
+Captured 2 pools of 8 FFPE samples each and sequenced on a HiSeq 2500 Rapid at 2x100bp. Ran GATK's best-practice for secondary analysis of TN-pairs using [Sarek v2.7.1](https://nf-co.re/sarek/2.7.1). The 16 BAMs after Picard MarkDuplicates and GATK BQSR are stored at `/hot/bams/mdl_cancer_v1/*.bam`. Per Picard HsMetrics, overall capture efficiency (`FOLD_ENRICHMENT`) was poor due to abundance of off-bait reads, mostly from intergenic SNPs. On vendor's recommendation, we tried it again with post-hyb wash temperature increased from 68deg to 70deg. `FOLD_ENRICHMENT` roughly doubled, though could be better. BAMs for these are stored at `/hot/bams/mdl_cancer_v1.2/*.bam`. These were sequenced on a NovaSeq 6000 SP at 2x150bp and shared with vendor for further analysis. They ran scripts that find the closest matching probe per off-bait read, and then ranked all probes by percent-contribution to the total number of off-bait reads in `data/ucla_mdl_cancer_ngs_v1_ranked_probes.bed`.
 
-Create a BED file of the 4479 probes that contributed >0.001% of off-bait reads:
+Create Picard-friendly interval lists for baits/targets, and generate HsMetrics per target requiring MQ>=1:
 ```bash
-awk '{if($4>0.00001){print}}' data/ucla_mdl_cancer_ngs_v1.2_ranked_probes.bed > data/vendor_flagged_probes.bed
+picard BedToIntervalList --INPUT ucla_mdl_cancer_ngs_v1_baits.grch38.bed --OUTPUT ucla_mdl_cancer_ngs_v1_baits.grch38.ilist --SEQUENCE_DICTIONARY /hot/bams/mdl_cancer_v1.2/NGSPanel_FFPE001.md.bam
+picard BedToIntervalList --INPUT ucla_mdl_cancer_ngs_v1_targets.grch38.bed --OUTPUT ucla_mdl_cancer_ngs_v1_targets.grch38.ilist --SEQUENCE_DICTIONARY /hot/bams/mdl_cancer_v1.2/NGSPanel_FFPE001.md.bam
+find /hot/bams/mdl_cancer_v1.2 -name "*.bam" | parallel -j16 picard CollectHsMetrics --INPUT {} --OUTPUT {.}.mq1.hsmetrics --PER_TARGET_COVERAGE {.}.mq1.hsmetrics_by_target --TARGET_INTERVALS ucla_mdl_cancer_ngs_v1_targets.grch38.ilist --BAIT_INTERVALS ucla_mdl_cancer_ngs_v1_baits.grch38.ilist --REFERENCE_SEQUENCE /hot/ref/GRCh38_Verily_v1.genome.fa --INCLUDE_INDELS --MINIMUM_MAPPING_QUALITY 1
 ```
 
 Find the type of repeats that contribute the most to off-bait reads:
 ```bash
-bedtools intersect -wao -f 0.25 -a data/ucla_mdl_cancer_ngs_v1.2_ranked_probes.bed -b data/repeat_masker_grch38.bed | awk -F"\t" 'OFS="\t" {sum[$8]+=$4} END {for (i in sum) print sum[i],i}' | sort -k1,1rg | less
+bedtools intersect -wao -f 0.25 -a data/ucla_mdl_cancer_ngs_v1_ranked_probes.bed -b data/repeat_masker_grch38.bed | awk -F"\t" 'OFS="\t" {sum[$8]+=$4} END {for (i in sum) print sum[i],i}' | sort -k1,1rg | less
 ```
 77% of off-bait reads are from targets overlapping `Alu` repeats of which 45% are `AluS` repeats, 23% are `AluY`, and 7% are `AluJ`. Another 12% of off-bait reads are from simple 2-mer repeats like `(TG)n`, `(AC)n`, `(CA)n`, and `(GT)n`.
+
+Create a BED file of the 4479 probes that contributed >0.001% of off-bait reads:
+```bash
+awk '{if($4>0.00001){print}}' data/ucla_mdl_cancer_ngs_v1_ranked_probes.bed > data/vendor_flagged_probes.bed
+```

@@ -1,2 +1,3 @@
 data/snp_candidates_grch38.bed
 data/repeat_masker_grch38.bed
+*.ilist
