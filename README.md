@@ -208,3 +208,22 @@ Create a BED file of the 4479 probes that contributed >0.001% of off-bait reads:
 ```bash
 awk '{if($4>0.00001){print}}' data/ucla_mdl_cancer_ngs_v1_ranked_probes.bed > data/vendor_flagged_probes.bed
 ```
+
+Of those probes, review and shortlist the ones that provide coverage for important targets:
+```bash
+bedtools intersect -wo -a data/vendor_flagged_probes.bed -b data/ucla_mdl_targets_grch38.bed | perl -a -F'\t' -ne '$F[3]=sprintf("%.5f",$F[3]); print join("\t",@F[0,1,2,7,3])."\n"' | bedtools merge -i - -d -120 -c 4,5 -o distinct | sort -k5,5rg > data/ucla_mdl_tricky_probes_grch38.bed
+```
+Shared `data/ucla_mdl_tricky_probes_grch38.bed` with the vendor to request repositioning these probes to avoid the overlapping repeats that are causing off-bait capture.
+
+Due to paralogous genes, many coding exons will not be genotypable if we require MQ>=1. This can be alleviated by shearing the input DNA into longer fragments aka inserts. Insert sizes for these libraries are somewhat short at around 210bp (lots of overlapping read-pairs with 2x150bp sequencing), but MQ improves significantly for many genes as we get closer to 350bp inserts (PMID: 32523024).
+
+Re-generate HsMetrics per target requiring MQ>=0:
+```bash
+find /hot/bams/mdl_cancer_v1.2 -name "*.bam" | parallel -j16 picard CollectHsMetrics --INPUT {} --OUTPUT {.}.mq0.hsmetrics --PER_TARGET_COVERAGE {.}.mq0.hsmetrics_by_target --TARGET_INTERVALS ucla_mdl_cancer_ngs_v1_targets.grch38.ilist --BAIT_INTERVALS ucla_mdl_cancer_ngs_v1_baits.grch38.ilist --REFERENCE_SEQUENCE /hot/ref/GRCh38_Verily_v1.genome.fa --INCLUDE_INDELS --MINIMUM_MAPPING_QUALITY 0
+```
+
+Shortlist targets with mean `min_normalized_coverage` <0.3 (too low) or mean `max_normalized_coverage` >1.9 (too high) across 16 samples (MQ>=0):
+```bash
+grep -hv ^chrom /hot/bams/mdl_cancer_v1.2/*.mq0.hsmetrics_by_target | cut -f1-3,9 | awk -F'\t' 'OFS="\t" {c[$1"\t"$2-1"\t"$3]+=$4} END{for(v in c){m=c[v]/16; if(m<0.3){print v,m}}}' | sort -su -k1,1V -k2,2n -k3,3n | bedtools intersect -wo -a data/ucla_mdl_targets_grch38.bed -b - | cut -f1-4,8 | bedtools merge -i - -c 4,5 -o distinct | sort -k5,5g > data/ucla_mdl_lowcov_targets_grch38.bed
+grep -hv ^chrom /hot/bams/mdl_cancer_v1.2/*.mq0.hsmetrics_by_target | cut -f1-3,10 | awk -F'\t' 'OFS="\t" {c[$1"\t"$2-1"\t"$3]+=$4} END{for(v in c){m=c[v]/16; if(m>1.9){print v,m}}}' | sort -su -k1,1V -k2,2n -k3,3n | bedtools intersect -wo -a data/ucla_mdl_targets_grch38.bed -b - | cut -f1-4,8 | bedtools merge -i - -c 4,5 -o distinct | sort -k5,5rg > data/ucla_mdl_2hicov_targets_grch38.bed
+```
