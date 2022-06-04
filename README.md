@@ -1,4 +1,4 @@
-## Shortlist targets for a hybridization capture-based cancer DNA sequencing panel
+## Design a hybridization capture-based cancer DNA sequencing panel
 
 ### Overview of required targets:
 * Cancer genes: Coding exons of all major transcripts of ~1k genes
@@ -185,7 +185,7 @@ echo -e "Region\tLabels\tLength\tSkipped_Length\tFraction_Skipped\tReason_to_Kee
 bedtools intersect -wo -a data/ucla_mdl_targets_grch38.bed -b data/vendor_flagged_targets.bed | perl -ane '$l=$F[2]-$F[1]; $s=$F[6]-$F[5]; print join("\t","$F[0]:$F[1]-$F[2]",$F[3],$l,$s,$s/$l,"")."\n" unless($F[3]=~m/^(rs\d+|\.)/)' >> data/ucla_mdl_tricky_targets_grch38.txt
 ```
 
-Shortlisted 17 important targets in `data/ucla_mdl_tricky_targets_grch38.txt` we asked vendor to capture those anyway, at the cost of some off-bait reads. Final target/bait loci of manufactured probes from vendor are stored at `ucla_mdl_cancer_ngs_v1.1_baits.hg38.bed` and `ucla_mdl_cancer_ngs_v1.1_targets.hg38.bed`. These are useful for calculating hybrid selection metrics. Note that bait loci are merged and precise tiling/genomic loci of each 120bp bait is not indicated. Most vendors consider this proprietary, but will share this with their clients under an NDA.
+Shortlisted 17 important targets in `data/ucla_mdl_tricky_targets_grch38.txt` we asked vendor to capture those anyway, at the cost of some off-bait reads. Final target/bait loci of manufactured probes are in the repo release as `ucla_mdl_cancer_ngs_v1.1_baits.hg38.bed.gz` and `ucla_mdl_cancer_ngs_v1.1_targets.hg38.bed.gz`. These are useful for calculating hybrid selection metrics. Note that bait loci are merged and precise tiling/genomic loci of each 120bp bait is not indicated. Our vendor considered this proprietary and shared it with us under an NDA.
 
 ### Testing
 
