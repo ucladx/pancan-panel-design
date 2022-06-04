@@ -177,25 +177,27 @@ Estimated how many probes will be needed for 1x tiling (targets <=120bp get one 
 bedtools merge -i data/ucla_mdl_targets_grch38.bed -c 4 -o distinct | awk -F"\t" '{len=$3-$2; sum+=(len<120?120:len)} END {print sum/120}'
 ```
 
-At this point, we sent our targets to the custom panel vendor in BED format. They ran bioinformatics tools to design the tiling and content of 120bp probes across our targets. They also flagged tricky targets that are most likely to cause off-bait capture (usually homology with common genomic repeats), and sent us `data/vendor_flagged_targets.bed`. Over 8k of these were intergenic SNPs that we removed from the design, since the remaining 42k were sufficient for HRD/LOH detection. We reviewed the remaining non-SNP targets based on importance.
+At this point, we sent our targets to the custom panel vendor in BED format. They ran bioinformatics tools to design the tiling and content of 120bp probes across our targets. They also flagged tricky targeted regions that are most likely to cause off-bait capture (usually homology with common genomic repeats), and sent us `data/vendor_flagged_targets.bed`. Most of these are intergenic SNPs overlapping Alu repeats that we either excluded, or we shifted the probes slightly to avoid overlap with Alu repeats. We reviewed the remaining targets based on importance.
 
 Review non-SNP targets with partial or no coverage by vendor's probe design:
 ```bash
 echo -e "Region\tLabels\tLength\tSkipped_Length\tFraction_Skipped\tReason_to_Keep" > data/ucla_mdl_tricky_targets_grch38.txt
-bedtools intersect -wo -a data/ucla_mdl_targets_grch38.bed -b data/vendor_flagged_targets.bed | perl -ane '$l=$F[2]-$F[1]; $s=$F[6]-$F[5]; print join("\t","$F[0]:$F[1]-$F[2]",$F[3],$l,$s,$s/$l,"")."\n" unless($F[3]=~m/^(rs\d+|\.)$/)' >> data/ucla_mdl_tricky_targets_grch38.txt
+bedtools intersect -wo -a data/ucla_mdl_targets_grch38.bed -b data/vendor_flagged_targets.bed | perl -ane '$l=$F[2]-$F[1]; $s=$F[6]-$F[5]; print join("\t","$F[0]:$F[1]-$F[2]",$F[3],$l,$s,$s/$l,"")."\n" unless($F[3]=~m/^(rs\d+|\.)/)' >> data/ucla_mdl_tricky_targets_grch38.txt
 ```
 
-Shortlisted 32 important targets in `data/ucla_mdl_tricky_targets_grch38.txt` we asked vendor to capture anyway, at the cost of some off-bait reads. Final target/bait loci of manufactured probes from vendor are stored at `ucla_mdl_cancer_ngs_v1_baits.grch38.bed` and `ucla_mdl_cancer_ngs_v1_targets.grch38.bed`. These are useful for calculating hybrid selection metrics. Note that bait loci are merged and precise tiling/genomic loci of each 120bp bait is not indicated. Most vendors consider this proprietary, but will share this with their clients under an NDA.
+Shortlisted 17 important targets in `data/ucla_mdl_tricky_targets_grch38.txt` we asked vendor to capture those anyway, at the cost of some off-bait reads. Final target/bait loci of manufactured probes from vendor are stored at `ucla_mdl_cancer_ngs_v1.1_baits.hg38.bed` and `ucla_mdl_cancer_ngs_v1.1_targets.hg38.bed`. These are useful for calculating hybrid selection metrics. Note that bait loci are merged and precise tiling/genomic loci of each 120bp bait is not indicated. Most vendors consider this proprietary, but will share this with their clients under an NDA.
 
 ### Testing
+
+Described below is the testing of the v1.0 panel on FFPE specimens to optimize the wet lab workflow and to identify probes that cause the most off-target capture. This data helped add, remove, or reposition probes in the v1.1 panel that was actually put into service.
 
 Captured 2 pools of 8 FFPE samples each and sequenced on a HiSeq 2500 Rapid at 2x100bp. Ran GATK's best-practice for secondary analysis of TN-pairs using [Sarek v2.7.1](https://nf-co.re/sarek/2.7.1). The 16 BAMs after Picard MarkDuplicates and GATK BQSR are stored at `/hot/bams/mdl_cancer_v1/*.bam`. Per Picard HsMetrics, overall capture efficiency (`FOLD_ENRICHMENT`) was poor due to abundance of off-bait reads, mostly from intergenic SNPs. On vendor's recommendation, we tried it again with post-hyb wash temperature increased from 68deg to 70deg. `FOLD_ENRICHMENT` roughly doubled, though could be better. BAMs for these are stored at `/hot/bams/mdl_cancer_v1.2/*.bam`. These were sequenced on a NovaSeq 6000 SP at 2x150bp and shared with vendor for further analysis. They ran scripts that find the closest matching probe per off-bait read, and then ranked all probes by percent-contribution to the total number of off-bait reads in `data/ucla_mdl_cancer_ngs_v1_ranked_probes.bed`.
 
 Create Picard-friendly interval lists for baits/targets, and generate HsMetrics per target requiring MQ>=1:
 ```bash
-picard BedToIntervalList --INPUT ucla_mdl_cancer_ngs_v1_baits.grch38.bed --OUTPUT ucla_mdl_cancer_ngs_v1_baits.grch38.ilist --SEQUENCE_DICTIONARY /hot/bams/mdl_cancer_v1.2/NGSPanel_FFPE001.md.bam
-picard BedToIntervalList --INPUT ucla_mdl_cancer_ngs_v1_targets.grch38.bed --OUTPUT ucla_mdl_cancer_ngs_v1_targets.grch38.ilist --SEQUENCE_DICTIONARY /hot/bams/mdl_cancer_v1.2/NGSPanel_FFPE001.md.bam
-find /hot/bams/mdl_cancer_v1.2 -name "*.bam" | parallel -j16 picard CollectHsMetrics --INPUT {} --OUTPUT {.}.mq1.hsmetrics --PER_TARGET_COVERAGE {.}.mq1.hsmetrics_by_target --TARGET_INTERVALS ucla_mdl_cancer_ngs_v1_targets.grch38.ilist --BAIT_INTERVALS ucla_mdl_cancer_ngs_v1_baits.grch38.ilist --REFERENCE_SEQUENCE /hot/ref/GRCh38_Verily_v1.genome.fa --INCLUDE_INDELS --MINIMUM_MAPPING_QUALITY 1
+picard BedToIntervalList --INPUT ucla_mdl_cancer_ngs_v1_baits.hg38.bed --OUTPUT ucla_mdl_cancer_ngs_v1_baits.hg38.ilist --SEQUENCE_DICTIONARY /hot/bams/mdl_cancer_v1.2/NGSPanel_FFPE001.md.bam
+picard BedToIntervalList --INPUT ucla_mdl_cancer_ngs_v1_targets.hg38.bed --OUTPUT ucla_mdl_cancer_ngs_v1_targets.hg38.ilist --SEQUENCE_DICTIONARY /hot/bams/mdl_cancer_v1.2/NGSPanel_FFPE001.md.bam
+find /hot/bams/mdl_cancer_v1.2 -name "*.bam" | parallel -j16 picard CollectHsMetrics --INPUT {} --OUTPUT {.}.mq1.hsmetrics --PER_TARGET_COVERAGE {.}.mq1.hsmetrics_by_target --TARGET_INTERVALS ucla_mdl_cancer_ngs_v1_targets.hg38.ilist --BAIT_INTERVALS ucla_mdl_cancer_ngs_v1_baits.hg38.ilist --REFERENCE_SEQUENCE /hot/ref/GRCh38_Verily_v1.genome.fa --INCLUDE_INDELS --MINIMUM_MAPPING_QUALITY 1
 ```
 
 Find the type of repeats that contribute the most to off-bait reads:
@@ -219,7 +221,7 @@ Due to paralogous genes, many coding exons will not be genotypable if we require
 
 Re-generate HsMetrics per target requiring MQ>=0:
 ```bash
-find /hot/bams/mdl_cancer_v1.2 -name "*.bam" | parallel -j16 picard CollectHsMetrics --INPUT {} --OUTPUT {.}.mq0.hsmetrics --PER_TARGET_COVERAGE {.}.mq0.hsmetrics_by_target --TARGET_INTERVALS ucla_mdl_cancer_ngs_v1_targets.grch38.ilist --BAIT_INTERVALS ucla_mdl_cancer_ngs_v1_baits.grch38.ilist --REFERENCE_SEQUENCE /hot/ref/GRCh38_Verily_v1.genome.fa --INCLUDE_INDELS --MINIMUM_MAPPING_QUALITY 0
+find /hot/bams/mdl_cancer_v1.2 -name "*.bam" | parallel -j16 picard CollectHsMetrics --INPUT {} --OUTPUT {.}.mq0.hsmetrics --PER_TARGET_COVERAGE {.}.mq0.hsmetrics_by_target --TARGET_INTERVALS ucla_mdl_cancer_ngs_v1_targets.hg38.ilist --BAIT_INTERVALS ucla_mdl_cancer_ngs_v1_baits.hg38.ilist --REFERENCE_SEQUENCE /hot/ref/GRCh38_Verily_v1.genome.fa --INCLUDE_INDELS --MINIMUM_MAPPING_QUALITY 0
 ```
 
 Shortlist targets with mean `min_normalized_coverage` <0.3 (too low) or mean `max_normalized_coverage` >1.9 (too high) across 16 samples (MQ>=0):

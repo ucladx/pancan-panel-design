@@ -1,3 +1,4 @@
 data/snp_candidates_grch38.bed
 data/repeat_masker_grch38.bed
+data/ucla_mdl_cancer_ngs_v1_ranked_probes.bed
 *.ilist
