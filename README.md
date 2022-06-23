@@ -113,7 +113,7 @@ sort -s -k1,1V -k2,2n -k3,3n targets/non_coding_targets_grch38.bed -o targets/no
 
 Manually added the following into `targets/non_coding_targets_grch38.bed`:
 * Breakpoints of MSH2 inversion (PMID: 18335504, 12203789, 24114314)
-* Breakpoints of PMS2 retrotransposon insertion and intronic regions homologous to PMS2CL pseudogene (PMID: 29792936)
+* Breakpoints of PMS2 retrotransposon insertion and intronic regions homologous to PMS2CL pseudogene (PMID: 22461402, 29792936)
 * Breakpoints of 40Kbp duplication between GREM1 and SCG5 (PMID: 22561515, 26493165)
 * Pathogenic germline variants near cancer susceptibility genes (ClinVar, [April 2020](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/archive/variant_summary_2020-04.txt.gz))
 
