@@ -1,4 +1,6 @@
-## Design a hybridization capture-based cancer DNA sequencing panel
+## Design a capture-based DNA sequencing panel for cancer
+
+GOAL: To assess frequently mutated genes and other somatic/germline alterations common to many different types of cancer. This "pan-cancer" analysis can lead to targeted treatment options for patients with biomarkers that are both common or uncommon in their cancer type. Tumor specimens must be FFPE and matched normal DNA is required from patient's blood or saliva.
 
 ### Overview of required targets:
 * Cancer genes: Coding exons of all major transcripts of ~1k genes
