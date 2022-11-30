@@ -142,7 +142,7 @@ sort -su -k1,1V -k2,2n -k3,3n data/snp_candidates_grch38.bed -o data/snp_candida
 
 **Source:** https://storage.googleapis.com/gcp-public-data--gnomad/release/3.0/vcf/genomes/gnomad.genomes.r3.0.sites.vcf.bgz
 
-We captured and sequenced ~42k of these SNPs in the v1 design using 16 FFPE samples and analyzed them. Per testing, major contributors to off-bait capture are Alu repeats.
+We captured and sequenced ~42k of these SNPs in the v0.9 design using 16 FFPE samples and analyzed them. Per testing, major contributors to off-bait capture are Alu repeats.
 
 Exclude SNPs <90bp from an Alu repeat, or within genomic loci flagged by vendor as contributors to off-bait capture:
 ```bash
@@ -187,11 +187,11 @@ echo -e "Region\tLabels\tLength\tSkipped_Length\tFraction_Skipped\tReason_to_Kee
 bedtools intersect -wo -a data/ucla_mdl_targets_grch38.bed -b data/vendor_flagged_targets.bed | perl -ane '$l=$F[2]-$F[1]; $s=$F[6]-$F[5]; print join("\t","$F[0]:$F[1]-$F[2]",$F[3],$l,$s,$s/$l,"")."\n" unless($F[3]=~m/^(rs\d+|\.)/)' >> data/ucla_mdl_tricky_targets_grch38.txt
 ```
 
-Shortlisted 17 important targets in `data/ucla_mdl_tricky_targets_grch38.txt` we asked vendor to capture those anyway, at the cost of some off-bait reads. Final target/bait loci of manufactured probes are in the repo release as `ucla_mdl_cancer_ngs_v1.1_baits.hg38.bed.gz` and `ucla_mdl_cancer_ngs_v1.1_targets.hg38.bed.gz`. These are useful for calculating hybrid selection metrics. Note that bait loci are merged and precise tiling/genomic loci of each 120bp bait is not indicated. Our vendor considered this proprietary and shared it with us under an NDA.
+Shortlisted 17 important targets in `data/ucla_mdl_tricky_targets_grch38.txt` we asked vendor to capture those anyway, at the cost of some off-bait reads. Final target/bait loci of manufactured probes are in the repo release as `ucla_mdl_cancer_ngs_v1_baits.hg38.bed.gz` and `ucla_mdl_cancer_ngs_v1_targets.hg38.bed.gz`. These are useful for calculating hybrid selection metrics. Note that bait loci are merged and precise tiling/genomic loci of each 120bp bait is not indicated. Our vendor considered this proprietary and shared it with us under an NDA.
 
 ### Testing
 
-Described below is the testing of the v1.0 panel on FFPE specimens to optimize the wet lab workflow and to identify probes that cause the most off-target capture. This data helped add, remove, or reposition probes in the v1.1 panel that was actually put into service.
+Described below is the testing of the v0.9 panel on FFPE specimens to optimize the wet lab workflow and to identify probes that cause the most off-target capture. This data helped add, remove, or reposition probes in the v1.0 panel that was actually put into service. Version numbers below do not correspond to repo releases.
 
 Captured 2 pools of 8 FFPE samples each and sequenced on a HiSeq 2500 Rapid at 2x100bp. Ran GATK's best-practice for secondary analysis of TN-pairs using [Sarek v2.7.1](https://nf-co.re/sarek/2.7.1). The 16 BAMs after Picard MarkDuplicates and GATK BQSR are stored at `/hot/bams/mdl_cancer_v1/*.bam`. Per Picard HsMetrics, overall capture efficiency (`FOLD_ENRICHMENT`) was poor due to abundance of off-bait reads, mostly from intergenic SNPs. On vendor's recommendation, we tried it again with post-hyb wash temperature increased from 68deg to 70deg. `FOLD_ENRICHMENT` roughly doubled, though could be better. BAMs for these are stored at `/hot/bams/mdl_cancer_v1.2/*.bam`. These were sequenced on a NovaSeq 6000 SP at 2x150bp and shared with vendor for further analysis. They ran scripts that find the closest matching probe per off-bait read, and then ranked all probes by percent-contribution to the total number of off-bait reads in `data/ucla_mdl_cancer_ngs_v1_ranked_probes.bed`.
 
